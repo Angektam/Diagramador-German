@@ -16,7 +16,7 @@ import { NotificationService } from '../../services/notification.service';
       </div>
       <div class="toolbar-actions">
         <button class="icon-btn" (click)="onNew()" title="Nuevo">📄</button>
-        <button class="icon-btn" (click)="openFileDialog()" title="Abrir diagrama">📂</button>
+        <button class="icon-btn" (click)="openFileDialog()" title="Abrir archivo (.json, .sql)">📂</button>
         <button class="icon-btn" (click)="onSave()" title="Guardar diagrama (JSON)">💾</button>
         <button class="icon-btn" (click)="diagram.openSqlModal()" title="Exportar SQL">SQL</button>
         <span class="separator"></span>
@@ -32,7 +32,7 @@ import { NotificationService } from '../../services/notification.service';
         <button class="icon-btn" (click)="onDelete()" title="Eliminar">🗑</button>
       </div>
     </header>
-    <input #fileInputRef type="file" accept=".json" (change)="onFileSelected($event)" hidden>
+    <input #fileInputRef type="file" accept=".json,.sql" (change)="onFileSelected($event)" hidden>
   `,
   styles: []
 })
@@ -58,10 +58,32 @@ export class ToolbarComponent {
     const file = input.files?.[0];
     if (file) {
       const r = new FileReader();
-      r.onload = () => this.diagram.loadDiagramJson(r.result as string);
+      const fileName = file.name.toLowerCase();
+
+      r.onload = () => {
+        const content = r.result as string;
+        
+        // Lógica para diferenciar tipos de archivos
+        if (fileName.endsWith('.json')) {
+          this.diagram.loadDiagramJson(content);
+        } else if (fileName.endsWith('.sql')) {
+          this.handleSqlFile(content);
+        }
+      };
       r.readAsText(file);
     }
     input.value = '';
+  }
+
+  /**
+   * Maneja la apertura de archivos SQL.
+   * Por ahora, podrías mostrar una notificación o preparar el sistema para procesar el texto.
+   */
+  private handleSqlFile(sql: string): void {
+    // Actualmente el sistema genera SQL desde las formas. 
+    // Si deseas importar tablas desde un .sql, necesitarías un parser de SQL.
+    console.log('Contenido SQL cargado:', sql);
+    this.notifications.info('Archivo SQL cargado correctamente');
   }
 
   onSave(): void {
@@ -74,6 +96,7 @@ export class ToolbarComponent {
     this.notifications.success('Diagrama guardado como diagrama.json');
   }
 
+  // ... resto de los métodos (onUndo, onRedo, etc.) se mantienen igual
   onUndo(): void {}
   onRedo(): void {}
 
