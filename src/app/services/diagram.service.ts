@@ -11,6 +11,7 @@ export class DiagramService {
   private shapes = signal<DiagramShape[]>([]);
   private connections = signal<Connection[]>([]);
   private selectedId = signal<string | null>(null);
+  private connectingFromId = signal<string | null>(null);
   private zoom = signal(100);
   private history = signal<DiagramShape[][]>([]);
   private historyIndex = signal(-1);
@@ -20,6 +21,7 @@ export class DiagramService {
   readonly shapesList = this.shapes.asReadonly();
   readonly connectionsList = this.connections.asReadonly();
   readonly selectedShapeId = this.selectedId.asReadonly();
+  readonly connectingFromShapeId = this.connectingFromId.asReadonly();
   readonly zoomLevel = this.zoom.asReadonly();
 
   readonly selectedShape = computed(() => {
@@ -51,21 +53,49 @@ export class DiagramService {
     this.selectedId.set(id);
   }
 
+  startConnectMode(): boolean {
+    const id = this.selectedId();
+    if (!id) return false;
+    this.connectingFromId.set(id);
+    return true;
+  }
+
+  clearConnectMode(): void {
+    this.connectingFromId.set(null);
+  }
+
+  connectToShape(toId: string): boolean {
+    const fromId = this.connectingFromId();
+    if (!fromId || fromId === toId) return false;
+    this.addConnection(fromId, toId);
+    this.connectingFromId.set(null);
+    this.selectedId.set(toId);
+    return true;
+  }
+
   setZoom(value: number): void {
     this.zoom.set(Math.max(25, Math.min(200, value)));
   }
 
   addConnection(fromId: string, toId: string): void {
+    if (fromId === toId) return;
+    const exists = this.connections().some(c => c.fromId === fromId && c.toId === toId);
+    if (exists) return;
     this.connections.update(list => [
       ...list,
       { id: `conn-${Date.now()}`, fromId, toId }
     ]);
   }
 
+  removeConnection(id: string): void {
+    this.connections.update(list => list.filter(c => c.id !== id));
+  }
+
   newDiagram(): void {
     this.shapes.set([]);
     this.connections.set([]);
     this.selectedId.set(null);
+    this.connectingFromId.set(null);
     this.zoom.set(100);
   }
 

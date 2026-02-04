@@ -16,8 +16,6 @@ const SHAPE_DEFS: ShapeDef[] = [
   { shape: 'ellipse', title: 'Elipse', category: 'flow' },
   { shape: 'parallelogram', title: 'Paralelogramo', category: 'flow' },
   { shape: 'hexagon', title: 'Hexágono', category: 'flow' },
-  { shape: 'arrow-right', title: 'Flecha derecha', category: 'arrows' },
-  { shape: 'arrow-down', title: 'Flecha abajo', category: 'arrows' },
   { shape: 'table', title: 'Tabla', category: 'database', table: true },
   { shape: 'view', title: 'Vista', category: 'database', table: true },
   { shape: 'procedure', title: 'Procedimiento', category: 'database' },
@@ -62,12 +60,6 @@ const SHAPE_DEFS: ShapeDef[] = [
                     }
                     @case ('hexagon') {
                       <svg viewBox="0 0 100 60" width="48" height="28"><polygon points="25,5 75,5 95,30 75,55 25,55 5,30" fill="var(--shape-fill)" stroke="var(--shape-stroke)"/></svg>
-                    }
-                    @case ('arrow-right') {
-                      <svg viewBox="0 0 100 40" width="48" height="20"><polygon points="5,20 75,5 75,15 95,20 75,25 75,35" fill="var(--shape-fill)" stroke="var(--shape-stroke)"/></svg>
-                    }
-                    @case ('arrow-down') {
-                      <svg viewBox="0 0 40 100" width="20" height="48"><polygon points="20,95 5,25 15,25 15,5 25,5 25,25 35,25" fill="var(--shape-fill)" stroke="var(--shape-stroke)"/></svg>
                     }
                     @case ('table') {
                       <svg viewBox="0 0 120 70" width="56" height="36">
@@ -137,7 +129,6 @@ export class ShapesPanelComponent {
   search = signal('');
   categories = [
     { name: 'Flujo', key: 'flow', open: true },
-    { name: 'Flechas', key: 'arrows', open: false },
     { name: 'Base de datos', key: 'database', open: true },
   ];
 

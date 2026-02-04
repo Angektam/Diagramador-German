@@ -20,11 +20,13 @@ import { NotificationService } from '../../services/notification.service';
         <button class="icon-btn" (click)="onSave()" title="Guardar diagrama (JSON)">💾</button>
         <button class="icon-btn" (click)="diagram.openSqlModal()" title="Exportar SQL">SQL</button>
         <span class="separator"></span>
+        <button class="icon-btn" [class.icon-btn-active]="diagram.connectingFromShapeId()" (click)="onConnect()" title="Conectar formas (selecciona una forma y luego la otra)">🔗</button>
+        <span class="separator"></span>
         <button class="icon-btn" (click)="onUndo()" title="Deshacer">↶</button>
         <button class="icon-btn" (click)="onRedo()" title="Rehacer">↷</button>
         <span class="separator"></span>
         <button class="icon-btn" (click)="onZoomOut()" title="Alejar">−</button>
-        <span class="zoom-label">{{ diagram.zoomLevel() }}%</span>
+        <span class="zoom-pill" title="Nivel de zoom">{{ diagram.zoomLevel() }}%</span>
         <button class="icon-btn" (click)="onZoomIn()" title="Acercar">+</button>
         <span class="separator"></span>
         <button class="icon-btn" (click)="onDelete()" title="Eliminar">🗑</button>
@@ -81,6 +83,20 @@ export class ToolbarComponent {
 
   onZoomIn(): void {
     this.diagram.setZoom(this.diagram.zoomLevel() + 10);
+  }
+
+  onConnect(): void {
+    if (this.diagram.connectingFromShapeId()) {
+      this.diagram.clearConnectMode();
+      this.notifications.info('Modo conectar cancelado');
+      return;
+    }
+    if (!this.diagram.selectedShapeId()) {
+      this.notifications.warning('Selecciona primero una forma y luego pulsa Conectar');
+      return;
+    }
+    this.diagram.startConnectMode();
+    this.notifications.info('Haz clic en la forma a la que quieres conectar');
   }
 
   onDelete(): void {
