@@ -7,103 +7,53 @@ import { NotificationService } from '../../services/notification.service';
   standalone: true,
   template: `
     <header class="toolbar">
-      <div class="menu-bar">
-        <button class="menu-btn" title="Archivo">Archivo</button>
-        <button class="menu-btn" title="Editar">Editar</button>
-        <button class="menu-btn" title="Ver">Ver</button>
-        <button class="menu-btn" title="Diseño">Diseño</button>
-        <button class="menu-btn" title="Ayuda">Ayuda</button>
-      </div>
       <div class="toolbar-actions">
         <button class="icon-btn" (click)="onNew()" title="Nuevo">📄</button>
-        <button class="icon-btn" (click)="openFileDialog()" title="Abrir diagrama">📂</button>
-        <button class="icon-btn" (click)="onSave()" title="Guardar diagrama (JSON)">💾</button>
-        <button class="icon-btn" (click)="diagram.openSqlModal()" title="Exportar SQL">SQL</button>
+        <button class="icon-btn" (click)="openFileDialog()" title="Abrir .json o .sql">📂</button>
+        <button class="icon-btn" (click)="onSave()" title="Guardar .json">💾</button>
+        <button class="icon-btn" (click)="diagram.openSqlModal()" title="Ver SQL">SQL</button>
         <span class="separator"></span>
-        <button class="icon-btn" [class.icon-btn-active]="diagram.connectingFromShapeId()" (click)="onConnect()" title="Conectar formas (selecciona una forma y luego la otra)">🔗</button>
-        <span class="separator"></span>
-        <button class="icon-btn" (click)="onUndo()" title="Deshacer">↶</button>
-        <button class="icon-btn" (click)="onRedo()" title="Rehacer">↷</button>
-        <span class="separator"></span>
-        <button class="icon-btn" (click)="onZoomOut()" title="Alejar">−</button>
-        <span class="zoom-pill" title="Nivel de zoom">{{ diagram.zoomLevel() }}%</span>
-        <button class="icon-btn" (click)="onZoomIn()" title="Acercar">+</button>
-        <span class="separator"></span>
-        <button class="icon-btn" (click)="onDelete()" title="Eliminar">🗑</button>
+        <button class="icon-btn" [class.icon-btn-active]="diagram.connectingFromShapeId()" (click)="onConnect()" title="Conectar">🔗</button>
       </div>
     </header>
-    <input #fileInputRef type="file" accept=".json" (change)="onFileSelected($event)" hidden>
-  `,
-  styles: []
+    <input #fileInputRef type="file" accept=".json,.sql" (change)="onFileSelected($event)" hidden>
+  `
 })
 export class ToolbarComponent {
   fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInputRef');
   diagram = inject(DiagramService);
   notifications = inject(NotificationService);
 
-  openFileDialog(): void {
-    this.fileInputRef()?.nativeElement?.click();
-  }
+  openFileDialog() { this.fileInputRef()?.nativeElement?.click(); }
 
-  onNew(): void {
-    const hasContent = this.diagram.shapesList().length > 0 || this.diagram.connectionsList().length > 0;
-    this.diagram.newDiagram();
-    if (hasContent) {
-      this.notifications.info('Se creó un nuevo diagrama en blanco');
-    }
-  }
-
-  onFileSelected(event: Event): void {
+  onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (file) {
       const r = new FileReader();
-      r.onload = () => this.diagram.loadDiagramJson(r.result as string);
+      const name = file.name.toLowerCase();
+      r.onload = () => {
+        const content = r.result as string;
+        if (name.endsWith('.json')) this.diagram.loadDiagramJson(content);
+        else if (name.endsWith('.sql')) this.diagram.loadExternalSql(content);
+      };
       r.readAsText(file);
     }
     input.value = '';
   }
 
-  onSave(): void {
+  onSave() {
     const blob = new Blob([this.diagram.getDiagramJson()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'diagrama.json';
     a.click();
     URL.revokeObjectURL(a.href);
-    this.notifications.success('Diagrama guardado como diagrama.json');
   }
 
-  onUndo(): void {}
-  onRedo(): void {}
-
-  onZoomOut(): void {
-    this.diagram.setZoom(this.diagram.zoomLevel() - 10);
-  }
-
-  onZoomIn(): void {
-    this.diagram.setZoom(this.diagram.zoomLevel() + 10);
-  }
-
-  onConnect(): void {
-    if (this.diagram.connectingFromShapeId()) {
-      this.diagram.clearConnectMode();
-      this.notifications.info('Modo conectar cancelado');
-      return;
-    }
-    if (!this.diagram.selectedShapeId()) {
-      this.notifications.warning('Selecciona primero una forma y luego pulsa Conectar');
-      return;
-    }
-    this.diagram.startConnectMode();
-    this.notifications.info('Haz clic en la forma a la que quieres conectar');
-  }
-
-  onDelete(): void {
-    const id = this.diagram.selectedShapeId();
-    if (id) {
-      this.diagram.removeShape(id);
-      this.notifications.info('Forma eliminada');
-    }
+  onNew() { this.diagram.newDiagram(); }
+  onConnect() { 
+    if (this.diagram.connectingFromShapeId()) this.diagram.clearConnectMode();
+    else if (this.diagram.selectedShapeId()) this.diagram.startConnectMode();
   }
 }

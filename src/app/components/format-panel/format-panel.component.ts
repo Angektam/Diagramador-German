@@ -1,149 +1,69 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, effect, untracked, signal, computed } from '@angular/core'; // Se agregó computed
 import { DiagramService } from '../../services/diagram.service';
-import { ValidationService } from '../../services/validation.service';
-import { NotificationService } from '../../services/notification.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-format-panel',
   standalone: true,
   imports: [FormsModule],
   template: `
-    <aside class="format-panel">
-      <div class="panel-header">
-        <span>Formato</span>
-      </div>
-      <div class="format-content">
-        @if (!diagram.selectedShape()) {
-          <p class="hint">Selecciona una forma para editar su estilo o conectar con otra.</p>
-        } @else {
-          <div class="format-section">
-            <label>Texto</label>
-            <input
-              type="text"
-              [ngModel]="diagram.selectedShape()?.text"
-              (ngModelChange)="updateText($event)"
-              placeholder="Texto de la forma"
-              [class.input-error]="textError()"
-            >
-            @if (textError()) {
-              <span class="form-error">{{ textError() }}</span>
-            }
-          </div>
-          @if (diagram.selectedShape()?.type !== 'table') {
-            <div class="format-section">
-              <label>Color de relleno</label>
-              <input type="color" [ngModel]="diagram.selectedShape()?.fill || '#ffffff'" (ngModelChange)="updateFill($event)">
-            </div>
-            <div class="format-section">
-              <label>Color de borde</label>
-              <input type="color" [ngModel]="diagram.selectedShape()?.stroke || '#6366f1'" (ngModelChange)="updateStroke($event)">
-            </div>
+    <div class="format-panel">
+      @if (diagram.selectedShape(); as shape) {
+        <h3>Propiedades de Tabla</h3>
+        <div class="field">
+          <label>Nombre:</label>
+          <input [(ngModel)]="tableName" (ngModelChange)="updateName($event)">
+        </div>
+        <button class="btn-primary" (click)="diagram.openTableModal()">Configurar Columnas</button>
+        <hr>
+        <h4>Conexiones</h4>
+        <ul>
+          @for (conn of connections(); track conn.id) {
+            <li>
+              Hacia: {{ getTargetName(conn.toId) }}
+              <button class="btn-danger" (click)="diagram.removeConnection(conn.id)">×</button>
+            </li>
           }
-          <div class="format-section connections-section">
-            <label>Conexiones</label>
-            @if (outgoingConnections().length > 0) {
-              <div class="connection-list">
-                @for (conn of outgoingConnections(); track conn.id) {
-                  <div class="connection-item">
-                    <span class="connection-target">→ {{ getShapeLabel(conn.toId) }}</span>
-                    <button type="button" class="btn-remove-conn" (click)="removeConnection(conn.id)" title="Quitar conexión">×</button>
-                  </div>
-                }
-              </div>
-            }
-            @if (otherShapes().length > 0) {
-              <div class="connect-row">
-                <select class="connect-select" [ngModel]="connectToId()" (ngModelChange)="connectToId.set($event)">
-                  <option value="">Conectar a...</option>
-                  @for (s of otherShapes(); track s.id) {
-                    <option [value]="s.id">{{ getShapeLabel(s.id) }}</option>
-                  }
-                </select>
-                <button type="button" class="btn-primary btn-add-conn" (click)="addConnection()" [disabled]="!connectToId()">Agregar</button>
-              </div>
-            } @else {
-              <p class="connection-hint">Añade otra forma al lienzo para conectar.</p>
-            }
-          </div>
-          @if (diagram.selectedShape()?.type === 'table') {
-            <div class="format-section">
-              <button type="button" class="btn-primary" (click)="openEditTable()">Editar tabla (columnas y relaciones)</button>
-            </div>
-          }
-        }
-      </div>
-    </aside>
+        </ul>
+      } @else {
+        <p>Selecciona una tabla para editar</p>
+      }
+    </div>
   `,
   styles: []
 })
 export class FormatPanelComponent {
   diagram = inject(DiagramService);
-  validation = inject(ValidationService);
-  notifications = inject(NotificationService);
-  textError = signal<string | null>(null);
-  connectToId = signal<string>('');
+  tableName = '';
 
-  otherShapes = computed(() => {
-    const list = this.diagram.shapesList();
-    const selected = this.diagram.selectedShapeId();
-    return list.filter(s => s.id !== selected);
-  });
-
-  outgoingConnections = computed(() => {
-    const selected = this.diagram.selectedShapeId();
-    if (!selected) return [];
-    return this.diagram.connectionsList().filter(c => c.fromId === selected);
+  // Ahora 'computed' está correctamente importado
+  connections = computed(() => {
+    const id = this.diagram.selectedShapeId();
+    return this.diagram.connectionsList().filter(c => c.fromId === id);
   });
 
   constructor() {
     effect(() => {
-      this.diagram.selectedShapeId();
-      this.textError.set(null);
+      const shape = this.diagram.selectedShape();
+      // 'untracked' evita el error NG0600 al escribir en una señal dentro de un efecto
+      untracked(() => {
+        if (shape && shape.tableData) {
+          this.tableName = shape.tableData.name;
+        }
+      });
     });
   }
 
-  updateText(val: string): void {
-    this.textError.set(null);
-    const result = this.validation.validateShapeName(val ?? '');
-    if (!result.valid) {
-      this.textError.set(result.error ?? null);
-      return;
+  updateName(name: string) {
+    const shape = this.diagram.selectedShape();
+    if (shape && shape.id) {
+      this.diagram.updateShape(shape.id, { 
+        tableData: { ...shape.tableData!, name } 
+      });
     }
-    const id = this.diagram.selectedShapeId();
-    if (id) this.diagram.updateShape(id, { text: val });
-  }
-  updateFill(val: string): void {
-    const id = this.diagram.selectedShapeId();
-    if (id) this.diagram.updateShape(id, { fill: val });
-  }
-  updateStroke(val: string): void {
-    const id = this.diagram.selectedShapeId();
-    if (id) this.diagram.updateShape(id, { stroke: val });
   }
 
-  openEditTable(): void {
-    this.diagram.openTableModal();
-  }
-
-  getShapeLabel(shapeId: string): string {
-    const s = this.diagram.shapesList().find(x => x.id === shapeId);
-    if (!s) return '(forma)';
-    if (s.type === 'table' && s.tableData?.name) return s.tableData.name;
-    return (s.text || s.type || '(sin nombre)').toString();
-  }
-
-  addConnection(): void {
-    const fromId = this.diagram.selectedShapeId();
-    const toId = this.connectToId();
-    if (!fromId || !toId) return;
-    this.diagram.addConnection(fromId, toId);
-    this.connectToId.set('');
-    this.notifications.success('Conexión agregada');
-  }
-
-  removeConnection(connId: string): void {
-    this.diagram.removeConnection(connId);
-    this.notifications.info('Conexión eliminada');
+  getTargetName(id: string): string {
+    return this.diagram.shapesList().find(s => s.id === id)?.tableData?.name || 'Tabla';
   }
 }
