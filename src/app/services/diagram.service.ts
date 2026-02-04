@@ -1,8 +1,13 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { DiagramShape, Connection, TableData } from '../models/diagram.model';
+import { ValidationService } from './validation.service';
+import { NotificationService } from './notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class DiagramService {
+  private validation = inject(ValidationService);
+  private notifications = inject(NotificationService);
+
   private shapes = signal<DiagramShape[]>([]);
   private connections = signal<Connection[]>([]);
   private selectedId = signal<string | null>(null);
@@ -83,17 +88,34 @@ export class DiagramService {
   }
 
   loadDiagramJson(json: string): void {
-    try {
-      const data = JSON.parse(json);
-      this.shapes.set(data.shapes ?? []);
-      this.connections.set(data.connections ?? []);
-      this.zoom.set(data.zoom ?? 100);
-    } catch {
-      console.error('Error al cargar el diagrama');
+    const result = this.validation.validateDiagramJson(json);
+    if (!result.valid) {
+      this.notifications.error(result.error ?? 'Error al validar el diagrama', 6000);
+      return;
     }
+    const data = result.data!;
+    this.shapes.set(data.shapes ?? []);
+    this.connections.set(data.connections ?? []);
+    this.zoom.set(data.zoom ?? 100);
+    this.notifications.success('Diagrama cargado correctamente');
   }
 
   openSqlModal(): void {
+    const shapes = this.shapes();
+    const sqlValidation = this.validation.validateDiagramForSql(shapes);
+    if (!sqlValidation.valid) {
+      this.notifications.error(sqlValidation.error ?? 'No se puede generar SQL', 5000);
+      return;
+    }
+    const fkValidation = this.validation.validateForeignKeys(shapes);
+    if (!fkValidation.valid && fkValidation.warnings.length > 0) {
+      this.notifications.warning(
+        fkValidation.warnings.length === 1
+          ? fkValidation.warnings[0]
+          : `${fkValidation.warnings.length} referencias FK apuntan a tablas que no existen. Revisa el SQL generado.`,
+        7000
+      );
+    }
     this.sqlModalOpen.set(true);
   }
 

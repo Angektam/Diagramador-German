@@ -1,5 +1,6 @@
 import { Component, inject, computed } from '@angular/core';
 import { DiagramService } from '../../services/diagram.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-modal-sql',
@@ -25,6 +26,7 @@ import { DiagramService } from '../../services/diagram.service';
 })
 export class ModalSqlComponent {
   diagram = inject(DiagramService);
+  notifications = inject(NotificationService);
   sqlOutput = computed(() => this.diagram.generateSql());
 
   close(): void {
@@ -36,14 +38,21 @@ export class ModalSqlComponent {
   }
 
   copySql(): void {
-    navigator.clipboard.writeText(this.diagram.generateSql());
+    const sql = this.diagram.generateSql();
+    navigator.clipboard.writeText(sql).then(
+      () => this.notifications.success('SQL copiado al portapapeles'),
+      () => this.notifications.error('No se pudo copiar al portapapeles')
+    );
   }
 
   downloadSql(): void {
-    const blob = new Blob([this.diagram.generateSql()], { type: 'text/plain' });
+    const sql = this.diagram.generateSql();
+    const blob = new Blob([sql], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'diagrama.sql';
     a.click();
+    URL.revokeObjectURL(a.href);
+    this.notifications.success('Archivo diagrama.sql descargado');
   }
 }

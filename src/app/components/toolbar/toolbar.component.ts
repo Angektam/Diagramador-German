@@ -1,5 +1,6 @@
-import { Component, ElementRef, viewChild } from '@angular/core';
+import { Component, ElementRef, viewChild, inject } from '@angular/core';
 import { DiagramService } from '../../services/diagram.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -35,15 +36,19 @@ import { DiagramService } from '../../services/diagram.service';
 })
 export class ToolbarComponent {
   fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInputRef');
-
-  constructor(public diagram: DiagramService) {}
+  diagram = inject(DiagramService);
+  notifications = inject(NotificationService);
 
   openFileDialog(): void {
     this.fileInputRef()?.nativeElement?.click();
   }
 
   onNew(): void {
+    const hasContent = this.diagram.shapesList().length > 0 || this.diagram.connectionsList().length > 0;
     this.diagram.newDiagram();
+    if (hasContent) {
+      this.notifications.info('Se creó un nuevo diagrama en blanco');
+    }
   }
 
   onFileSelected(event: Event): void {
@@ -63,6 +68,8 @@ export class ToolbarComponent {
     a.href = URL.createObjectURL(blob);
     a.download = 'diagrama.json';
     a.click();
+    URL.revokeObjectURL(a.href);
+    this.notifications.success('Diagrama guardado como diagrama.json');
   }
 
   onUndo(): void {}
@@ -78,6 +85,9 @@ export class ToolbarComponent {
 
   onDelete(): void {
     const id = this.diagram.selectedShapeId();
-    if (id) this.diagram.removeShape(id);
+    if (id) {
+      this.diagram.removeShape(id);
+      this.notifications.info('Forma eliminada');
+    }
   }
 }

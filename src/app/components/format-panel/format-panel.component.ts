@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DiagramService } from '../../services/diagram.service';
+import { ValidationService } from '../../services/validation.service';
 
 @Component({
   selector: 'app-format-panel',
@@ -17,7 +18,16 @@ import { DiagramService } from '../../services/diagram.service';
         } @else {
           <div class="format-section">
             <label>Texto</label>
-            <input type="text" [ngModel]="diagram.selectedShape()?.text" (ngModelChange)="updateText($event)" placeholder="Texto de la forma">
+            <input
+              type="text"
+              [ngModel]="diagram.selectedShape()?.text"
+              (ngModelChange)="updateText($event)"
+              placeholder="Texto de la forma"
+              [class.input-error]="textError()"
+            >
+            @if (textError()) {
+              <span class="form-error">{{ textError() }}</span>
+            }
           </div>
           @if (diagram.selectedShape()?.type !== 'table') {
             <div class="format-section">
@@ -42,8 +52,23 @@ import { DiagramService } from '../../services/diagram.service';
 })
 export class FormatPanelComponent {
   diagram = inject(DiagramService);
+  validation = inject(ValidationService);
+  textError = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      this.diagram.selectedShapeId();
+      this.textError.set(null);
+    });
+  }
 
   updateText(val: string): void {
+    this.textError.set(null);
+    const result = this.validation.validateShapeName(val ?? '');
+    if (!result.valid) {
+      this.textError.set(result.error ?? null);
+      return;
+    }
     const id = this.diagram.selectedShapeId();
     if (id) this.diagram.updateShape(id, { text: val });
   }
