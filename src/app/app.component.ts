@@ -1,5 +1,6 @@
 // Importación del decorador Component desde el núcleo de Angular
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 // Importación del componente de barra de herramientas
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 // Importación del componente del panel de formas
@@ -23,6 +24,7 @@ import { NotificationContainerComponent } from './components/notification-contai
   standalone: true,
   // Array de componentes que se utilizan en la plantilla
   imports: [
+    RouterOutlet,
     ToolbarComponent,
     ShapesPanelComponent,
     CanvasComponent,
@@ -33,15 +35,7 @@ import { NotificationContainerComponent } from './components/notification-contai
   ],
   // Plantilla HTML del componente que estructura la interfaz principal
   template: `
-    <app-toolbar />
-    <div class="app-container">
-      <app-shapes-panel />
-      <app-canvas />
-      <app-format-panel />
-    </div>
-    <app-modal-table />
-    <app-modal-sql />
-    <app-notification-container />
+    <router-outlet />
   `,
   // Array de estilos CSS (actualmente vacío)
   styles: []
