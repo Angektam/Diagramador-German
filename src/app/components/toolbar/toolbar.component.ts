@@ -154,22 +154,46 @@ export class ToolbarComponent {
       try {
         const content = e.target?.result as string;
         
-        if (file.name.endsWith('.sql')) {
+        // Detectar tipo de archivo por extensión
+        if (file.name.endsWith('.json')) {
+          // Intentar parsear como JSON
+          try {
+            JSON.parse(content);
+            this.diagram.loadDiagramJson(content);
+            this.notifications.success('Diagrama cargado correctamente');
+          } catch (jsonError) {
+            this.notifications.error('El archivo JSON no es válido');
+          }
+        } else if (file.name.endsWith('.sql')) {
+          // Cargar como SQL
           this.diagram.loadExternalSql(content);
-          this.notifications.success('Archivo SQL cargado');
-        } else if (file.name.endsWith('.json')) {
-          this.diagram.loadDiagramJson(content);
-          this.notifications.success('Diagrama cargado');
+          this.notifications.success('Archivo SQL procesado');
         } else {
-          this.notifications.warning('Formato de archivo no soportado');
+          // Intentar detectar automáticamente
+          try {
+            // Intentar como JSON primero
+            JSON.parse(content);
+            this.diagram.loadDiagramJson(content);
+            this.notifications.success('Diagrama cargado correctamente');
+          } catch {
+            // Si falla, intentar como SQL
+            this.diagram.loadExternalSql(content);
+            this.notifications.success('Archivo procesado como SQL');
+          }
         }
       } catch (error) {
         this.notifications.error('Error al cargar el archivo');
+        console.error('Error loading file:', error);
       }
     };
+    
+    reader.onerror = () => {
+      this.notifications.error('Error al leer el archivo');
+    };
+    
     reader.readAsText(file);
     
-    // Reset input
+    // Reset input para permitir cargar el mismo archivo de nuevo
     event.target.value = '';
   }
 }

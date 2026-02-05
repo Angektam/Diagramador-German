@@ -78,41 +78,209 @@ export class DiagramService {
   loadDiagramJson(json: string) {
     try {
       const data = JSON.parse(json);
+      
+      // Validar que tenga la estructura correcta
+      if (!data || typeof data !== 'object') {
+        this.notifications.error('El archivo JSON no tiene el formato correcto');
+        return;
+      }
+      
+      // Cargar los datos
       this.shapes.set(data.shapes || []);
       this.connections.set(data.connections || []);
       this.zoom.set(data.zoom || 100);
-    } catch (e) { this.notifications.error('Error al cargar JSON'); }
+      this.externalSql.set(null); // Limpiar SQL externo
+      
+      // Mostrar información de lo que se cargó
+      const shapeCount = (data.shapes || []).length;
+      const connCount = (data.connections || []).length;
+      
+      if (shapeCount === 0) {
+        this.notifications.warning('El diagrama está vacío');
+      } else {
+        this.notifications.success(`Diagrama cargado: ${shapeCount} forma(s), ${connCount} conexión(es)`);
+      }
+    } catch (e) { 
+      this.notifications.error('Error al parsear el archivo JSON');
+      console.error('JSON parse error:', e);
+    }
   }
 
   loadExternalSql(sql: string) {
     this.externalSql.set(sql);
-    const tableRegex = /CREATE\s+TABLE\s+([a-zA-Z0-9_]+)\s*\(([\s\S]*?)\);/gi;
+    
+    console.log('=== INICIO IMPORTACIÓN SQL ===');
+    console.log('SQL original (primeros 500 chars):', sql.substring(0, 500));
+    
+    // Limpiar el SQL: remover comentarios y normalizar espacios
+    const cleanSql = sql
+      .replace(/--.*$/gm, '') // Remover comentarios de línea
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remover comentarios de bloque
+      .replace(/\s+/g, ' ') // Normalizar espacios
+      .trim();
+    
+    console.log('SQL limpio (primeros 500 chars):', cleanSql.substring(0, 500));
+    
+    // Regex más flexible para detectar CREATE TABLE
+    const tableRegex = /CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\(([\s\S]*?)\);?/gi;
     let match;
     const newShapes: DiagramShape[] = [];
+    const foreignKeys: { fromTable: string; fromColumn: string; toTable: string; toColumn: string }[] = [];
     let px = 50, py = 50;
+    let tablesFound = 0;
 
-    while ((match = tableRegex.exec(sql)) !== null) {
-      const colLines = match[2].trim().split(/,(?![^\(]*\))/);
-      const columns = colLines.map(l => {
-        const p = l.trim().split(/\s+/);
-        return { name: p[0], type: p[1] || 'VARCHAR', pk: l.toUpperCase().includes('PRIMARY KEY') };
-      }).filter(c => !['PRIMARY', 'KEY', 'CONSTRAINT'].includes(c.name.toUpperCase()));
+    while ((match = tableRegex.exec(cleanSql)) !== null) {
+      tablesFound++;
+      const tableName = match[1];
+      const columnsText = match[2];
+      
+      console.log(`\n--- Tabla ${tablesFound}: ${tableName} ---`);
+      console.log('Contenido de columnas:', columnsText);
+      
+      // Dividir columnas de forma más inteligente
+      const colLines = columnsText
+        .split(/,(?![^()]*\))/) // Split por comas que no estén dentro de paréntesis
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      console.log('Líneas de columnas:', colLines);
+      
+      const columns = colLines
+        .map(line => {
+          // Limpiar la línea
+          const cleanLine = line.trim();
+          
+          // Detectar FOREIGN KEY en formato: FOREIGN KEY (columna) REFERENCES tabla(columna)
+          const fkMatch = /FOREIGN\s+KEY\s*\(\s*(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\)\s*REFERENCES\s+(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\(\s*(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\)/i.exec(cleanLine);
+          if (fkMatch) {
+            console.log('FK detectada (constraint):', {
+              from: tableName + '.' + fkMatch[1],
+              to: fkMatch[2] + '.' + fkMatch[3]
+            });
+            foreignKeys.push({
+              fromTable: tableName,
+              fromColumn: fkMatch[1],
+              toTable: fkMatch[2],
+              toColumn: fkMatch[3]
+            });
+            return null; // No agregar como columna
+          }
+          
+          // Ignorar otros constraints
+          if (/^(PRIMARY\s+KEY|CONSTRAINT|UNIQUE|CHECK|INDEX|KEY)\s*\(/i.test(cleanLine)) {
+            console.log('Ignorando constraint:', cleanLine.substring(0, 50));
+            return null;
+          }
+          
+          // Extraer nombre y tipo de columna
+          const parts = cleanLine.split(/\s+/);
+          if (parts.length < 2) {
+            console.log('Línea inválida (muy corta):', cleanLine);
+            return null;
+          }
+          
+          const colName = parts[0].replace(/[`'"]/g, ''); // Remover comillas
+          const colType = parts[1].replace(/[`'"]/g, '').toUpperCase();
+          
+          // Detectar si es PRIMARY KEY
+          const isPK = /PRIMARY\s+KEY/i.test(cleanLine) || /\bPK\b/i.test(cleanLine);
+          
+          // Detectar REFERENCES en la misma línea de la columna
+          const refMatch = /REFERENCES\s+(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\(\s*(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\)/i.exec(cleanLine);
+          if (refMatch) {
+            console.log('FK detectada (inline):', {
+              from: tableName + '.' + colName,
+              to: refMatch[1] + '.' + refMatch[2]
+            });
+            foreignKeys.push({
+              fromTable: tableName,
+              fromColumn: colName,
+              toTable: refMatch[1],
+              toColumn: refMatch[2]
+            });
+          }
+          
+          return { 
+            name: colName, 
+            type: colType, 
+            pk: isPK,
+            fk: refMatch ? refMatch[1] : undefined
+          };
+        })
+        .filter(col => col !== null) as any[];
 
-      newShapes.push({
-        id: 't-' + Math.random(),
-        type: 'table', x: px, y: py, width: 200, height: 150,
-        tableData: { name: match[1], columns: columns as any }
-      });
-      px += 250; if (px > 800) { px = 50; py += 200; }
+      console.log('Columnas procesadas:', columns);
+
+      if (columns.length > 0) {
+        const shapeId = 't-' + tableName + '-' + Date.now();
+        newShapes.push({
+          id: shapeId,
+          type: 'table',
+          x: px,
+          y: py,
+          width: 200,
+          height: Math.max(150, 80 + columns.length * 25),
+          tableData: { name: tableName, columns: columns }
+        });
+        
+        console.log('Forma creada:', { id: shapeId, name: tableName });
+        
+        px += 250;
+        if (px > 800) {
+          px = 50;
+          py += 200;
+        }
+      }
     }
+
+    console.log('\n=== RESUMEN ===');
+    console.log('Total tablas encontradas:', newShapes.length);
+    console.log('Nombres de tablas:', newShapes.map(s => s.tableData?.name));
+    console.log('Total FKs detectadas:', foreignKeys.length);
+    console.log('Detalle de FKs:', foreignKeys);
 
     if (newShapes.length > 0) {
       this.shapes.set(newShapes);
-      this.notifications.success('SQL importado visualmente');
+      
+      // Crear conexiones basadas en las foreign keys detectadas
+      const newConnections: Connection[] = [];
+      foreignKeys.forEach(fk => {
+        console.log(`\nBuscando conexión para FK: ${fk.fromTable}.${fk.fromColumn} -> ${fk.toTable}.${fk.toColumn}`);
+        
+        const fromShape = newShapes.find(s => s.tableData?.name === fk.fromTable);
+        const toShape = newShapes.find(s => s.tableData?.name === fk.toTable);
+        
+        console.log('Forma origen encontrada:', fromShape ? fromShape.id : 'NO ENCONTRADA');
+        console.log('Forma destino encontrada:', toShape ? toShape.id : 'NO ENCONTRADA');
+        
+        if (fromShape && toShape) {
+          const connId = 'conn-' + Date.now() + '-' + Math.random();
+          newConnections.push({
+            id: connId,
+            fromId: fromShape.id,
+            toId: toShape.id
+          });
+          console.log('Conexión creada:', connId, fromShape.id, '->', toShape.id);
+        } else {
+          console.warn('No se pudo crear conexión - tabla no encontrada');
+        }
+      });
+      
+      console.log('\n=== CONEXIONES FINALES ===');
+      console.log('Total conexiones creadas:', newConnections.length);
+      console.log('Detalle:', newConnections);
+      
+      this.connections.set(newConnections);
+      
+      const connMsg = newConnections.length > 0 ? `, ${newConnections.length} relación(es)` : '';
+      this.notifications.success(`SQL importado: ${newShapes.length} tabla(s)${connMsg}`);
     } else {
       this.sqlModalOpen.set(true);
-      this.notifications.warning('No se detectaron tablas, mostrando texto.');
+      this.notifications.warning('No se detectaron tablas CREATE TABLE. Mostrando SQL en el editor.');
+      console.log('No se encontraron tablas en el SQL');
     }
+    
+    console.log('=== FIN IMPORTACIÓN SQL ===\n');
   }
 
   generateSql() {
