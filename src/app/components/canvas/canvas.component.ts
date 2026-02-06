@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <main class="canvas-wrapper" #wrapperRef (drop)="onDrop($event)" (dragover)="onDragOver($event)" (mousedown)="onCanvasMouseDown($event)" (wheel)="onWheel($event)">
-      <div class="canvas-container" #containerRef>
+      <div class="canvas-container" #containerRef [style.transform]="'scale(' + diagram.zoomLevel() / 100 + ')'" [style.transform-origin]="'0 0'">
         <svg class="canvas-grid" #gridRef viewBox="0 0 10000 10000"></svg>
         <svg class="canvas-svg" #svgRef viewBox="0 0 10000 10000">
           <defs>
@@ -427,10 +427,33 @@ export class CanvasComponent implements AfterViewInit {
   onWheel(event: WheelEvent) {
     if (event.ctrlKey) {
       event.preventDefault();
+      
+      const wrapper = this.wrapperRef.nativeElement;
+      const oldZoom = this.diagram.zoomLevel();
       const delta = event.deltaY > 0 ? -10 : 10;
-      const currentZoom = this.diagram.zoomLevel();
-      this.diagram.setZoom(currentZoom + delta);
-      this.updateMinimapViewport();
+      const newZoom = Math.max(25, Math.min(200, oldZoom + delta));
+      
+      if (newZoom !== oldZoom) {
+        // Calcular punto del mouse relativo al wrapper
+        const rect = wrapper.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left + wrapper.scrollLeft;
+        const mouseY = event.clientY - rect.top + wrapper.scrollTop;
+        
+        // Calcular nueva posición de scroll para mantener el punto bajo el cursor
+        const zoomRatio = newZoom / oldZoom;
+        const newScrollLeft = mouseX * zoomRatio - (event.clientX - rect.left);
+        const newScrollTop = mouseY * zoomRatio - (event.clientY - rect.top);
+        
+        // Aplicar zoom
+        this.diagram.setZoom(newZoom);
+        
+        // Ajustar scroll después de un pequeño delay para que el transform se aplique
+        setTimeout(() => {
+          wrapper.scrollLeft = newScrollLeft;
+          wrapper.scrollTop = newScrollTop;
+          this.updateMinimapViewport();
+        }, 0);
+      }
     }
   }
   
@@ -612,9 +635,10 @@ export class CanvasComponent implements AfterViewInit {
     const w = shape === 'table' || shape === 'view' ? 180 : 120;
     const h = shape === 'table' || shape === 'view' ? 70 : 60;
     
-    // Calcular posición relativa al scroll actual
-    const dropX = event.clientX - rect.left + wrapper.scrollLeft;
-    const dropY = event.clientY - rect.top + wrapper.scrollTop;
+    // Calcular posición considerando el zoom
+    const zoom = this.diagram.zoomLevel() / 100;
+    const dropX = (event.clientX - rect.left + wrapper.scrollLeft) / zoom;
+    const dropY = (event.clientY - rect.top + wrapper.scrollTop) / zoom;
     const x = dropX - w / 2;
     const y = dropY - h / 2;
 

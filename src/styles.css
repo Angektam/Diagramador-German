@@ -367,6 +367,8 @@ app-root {
   width: 10000px;
   height: 10000px;
   margin: 0;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
 }
 
 .canvas-grid {
