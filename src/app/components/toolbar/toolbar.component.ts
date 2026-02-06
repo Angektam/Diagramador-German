@@ -25,8 +25,11 @@ import { Router } from '@angular/router';
         <button (click)="onNew()" class="icon-btn" title="Nuevo diagrama">
           📄
         </button>
+        <button (click)="diagram.openTemplatesModal()" class="icon-btn templates-btn" title="Plantillas">
+          �
+        </button>
         <button (click)="onFileClick()" class="icon-btn" title="Abrir archivo">
-          📂
+          �
         </button>
         <button (click)="onSaveToGallery()" class="icon-btn" title="Guardar en galería">
           📁
@@ -52,17 +55,27 @@ import { Router } from '@angular/router';
 
       <!-- Zoom Controls -->
       <div class="toolbar-actions">
-        <button class="icon-btn" title="Alejar">
+        <button (click)="diagram.setZoom(diagram.zoomLevel() - 10)" class="icon-btn" title="Alejar (Ctrl + Rueda)">
           −
         </button>
-        <div class="zoom-pill">100%</div>
-        <button class="icon-btn" title="Acercar">
+        <div class="zoom-pill">{{ diagram.zoomLevel() }}%</div>
+        <button (click)="diagram.setZoom(diagram.zoomLevel() + 10)" class="icon-btn" title="Acercar (Ctrl + Rueda)">
           +
+        </button>
+        <button (click)="diagram.setZoom(100)" class="icon-btn" title="Restablecer zoom">
+          ⊙
         </button>
       </div>
 
       <!-- Spacer -->
       <div style="flex: 1;"></div>
+      
+      <!-- Selection Info -->
+      @if (diagram.selectedShapeIds().length > 0) {
+        <div class="selection-info">
+          {{ diagram.selectedShapeIds().length }} seleccionada(s)
+        </div>
+      }
 
       <!-- Gallery Button -->
       <button (click)="router.navigate(['/gallery'])" class="icon-btn gallery-btn" title="Ver galería">
@@ -86,6 +99,17 @@ import { Router } from '@angular/router';
       color: white;
     }
 
+    .templates-btn {
+      background: rgba(139, 92, 246, 0.1);
+      color: #8b5cf6;
+      font-size: 18px;
+    }
+
+    .templates-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      transform: scale(1.05);
+    }
+
     .gallery-btn {
       background: rgba(239, 68, 68, 0.2);
       color: #ef4444;
@@ -95,6 +119,17 @@ import { Router } from '@angular/router';
     .gallery-btn:hover {
       background: rgba(239, 68, 68, 0.3);
       color: #ef4444;
+    }
+    
+    .selection-info {
+      padding: 6px 12px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      margin-right: 8px;
     }
   `]
 })

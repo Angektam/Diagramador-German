@@ -5,6 +5,7 @@ import { CanvasComponent } from '../canvas/canvas.component';
 import { FormatPanelComponent } from '../format-panel/format-panel.component';
 import { ModalTableComponent } from '../modal-table/modal-table.component';
 import { ModalSqlComponent } from '../modal-sql/modal-sql.component';
+import { TemplatesModalComponent } from '../templates-modal/templates-modal.component';
 import { NotificationContainerComponent } from '../notification-container/notification-container.component';
 
 @Component({
@@ -17,6 +18,7 @@ import { NotificationContainerComponent } from '../notification-container/notifi
     FormatPanelComponent,
     ModalTableComponent,
     ModalSqlComponent,
+    TemplatesModalComponent,
     NotificationContainerComponent
   ],
   template: `
@@ -28,6 +30,7 @@ import { NotificationContainerComponent } from '../notification-container/notifi
     </div>
     <app-modal-table />
     <app-modal-sql />
+    <app-templates-modal />
     <app-notification-container />
   `,
   styles: []

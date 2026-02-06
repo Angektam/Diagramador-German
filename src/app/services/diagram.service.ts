@@ -10,23 +10,25 @@ export class DiagramService {
 
   private shapes = signal<DiagramShape[]>([]);
   private connections = signal<Connection[]>([]);
-  private selectedId = signal<string | null>(null);
+  private selectedIds = signal<string[]>([]); // Changed to array for multi-selection
   private connectingFromId = signal<string | null>(null);
   private zoom = signal(100);
   
   private externalSql = signal<string | null>(null);
   sqlModalOpen = signal(false);
   tableModalOpen = signal(false);
+  templatesModalOpen = signal(false);
 
   readonly shapesList = this.shapes.asReadonly();
   readonly connectionsList = this.connections.asReadonly();
-  readonly selectedShapeId = this.selectedId.asReadonly();
+  readonly selectedShapeIds = this.selectedIds.asReadonly(); // Expose as array
+  readonly selectedShapeId = computed(() => this.selectedIds()[0] ?? null); // Backward compatibility
   readonly connectingFromShapeId = this.connectingFromId.asReadonly();
   readonly zoomLevel = this.zoom.asReadonly();
 
   readonly selectedShape = computed(() => {
-    const id = this.selectedId();
-    return id ? this.shapes().find(s => s.id === id) ?? null : null;
+    const ids = this.selectedIds();
+    return ids.length === 1 ? this.shapes().find(s => s.id === ids[0]) ?? null : null;
   });
 
   // --- MÉTODOS DE GALERÍA ---
@@ -59,10 +61,43 @@ export class DiagramService {
   removeShape(id: string) {
     this.shapes.update(l => l.filter(s => s.id !== id));
     this.connections.update(l => l.filter(c => c.fromId !== id && c.toId !== id));
-    if (this.selectedId() === id) this.selectedId.set(null);
+    if (this.selectedIds().includes(id)) {
+      this.selectedIds.update(ids => ids.filter(i => i !== id));
+    }
   }
 
-  selectShape(id: string | null) { this.selectedId.set(id); }
+  selectShape(id: string | null) { 
+    if (id === null) {
+      this.selectedIds.set([]);
+    } else {
+      this.selectedIds.set([id]); 
+    }
+  }
+  
+  // Multi-selection methods
+  toggleShapeSelection(id: string) {
+    this.selectedIds.update(ids => {
+      if (ids.includes(id)) {
+        return ids.filter(i => i !== id);
+      } else {
+        return [...ids, id];
+      }
+    });
+  }
+  
+  selectAllShapes() {
+    this.selectedIds.set(this.shapes().map(s => s.id));
+  }
+  
+  clearSelection() {
+    this.selectedIds.set([]);
+  }
+  
+  deleteSelectedShapes() {
+    const ids = this.selectedIds();
+    ids.forEach(id => this.removeShape(id));
+    this.selectedIds.set([]);
+  }
   setZoom(v: number) { this.zoom.set(Math.max(25, Math.min(200, v))); }
 
   newDiagram() {
@@ -293,8 +328,13 @@ export class DiagramService {
   closeSqlModal() { this.sqlModalOpen.set(false); }
   openTableModal() { this.tableModalOpen.set(true); }
   closeTableModal() { this.tableModalOpen.set(false); }
+  openTemplatesModal() { this.templatesModalOpen.set(true); }
+  closeTemplatesModal() { this.templatesModalOpen.set(false); }
   removeConnection(id: string) { this.connections.update(l => l.filter(c => c.id !== id)); }
-  startConnectMode() { this.connectingFromId.set(this.selectedId()); }
+  startConnectMode() { 
+    const selectedId = this.selectedIds()[0];
+    this.connectingFromId.set(selectedId ?? null); 
+  }
   clearConnectMode() { this.connectingFromId.set(null); }
 
   // Métodos de conexión faltantes
