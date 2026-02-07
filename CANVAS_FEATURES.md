@@ -37,12 +37,24 @@
   - Indicador visual: borde azul brillante con glow
   - Contador en el toolbar muestra cantidad seleccionada
 
+### 5. 📋 Copiar y Pegar
+- **Atajos**: `Ctrl + C`, `Ctrl + V`, `Ctrl + D`
+- **Funcionalidad**:
+  - Copia formas seleccionadas al portapapeles
+  - Pega en el centro del viewport actual
+  - Duplica con un solo atajo (Ctrl+D)
+  - Mantiene todas las propiedades y relaciones
+  - Genera IDs únicos automáticamente
+
 ## ⌨️ Atajos de Teclado
 
 | Atajo | Acción |
 |-------|--------|
 | `Ctrl + Click` | Agregar/quitar forma de la selección |
 | `Ctrl + A` | Seleccionar todas las formas |
+| `Ctrl + C` | Copiar formas seleccionadas |
+| `Ctrl + V` | Pegar formas |
+| `Ctrl + D` | Duplicar formas seleccionadas |
 | `Escape` | Deseleccionar todo |
 | `Delete` / `Backspace` | Eliminar formas seleccionadas |
 | `G` | Toggle Snap to Grid ON/OFF |
@@ -73,6 +85,9 @@
 3. **Edición masiva**: Selecciona múltiples formas con Ctrl+Click y muévelas juntas
 4. **Zoom preciso**: Usa Ctrl+Rueda para ajustar el nivel de detalle mientras trabajas
 5. **Alineación perfecta**: Las guías te ayudan a mantener todo ordenado automáticamente
+6. **Duplicación rápida**: Usa Ctrl+D para duplicar formas instantáneamente
+7. **Crear patrones**: Copia un grupo de formas y pégalo múltiples veces para crear estructuras repetitivas
+8. **Backup visual**: Copia formas antes de experimentar con cambios
 
 ## 🔧 Configuración Técnica
 
@@ -92,9 +107,10 @@
 ## 🚀 Próximas Mejoras Sugeridas
 
 - [ ] Selección por área (drag rectangle)
-- [ ] Copiar/pegar formas (Ctrl+C / Ctrl+V)
+- [ ] Deshacer/Rehacer mejorado
 - [ ] Agrupar formas seleccionadas
 - [ ] Distribución automática (horizontal/vertical)
 - [ ] Alineación por botones (izquierda, centro, derecha)
 - [ ] Zoom a selección (fit to selection)
 - [ ] Historial de zoom (zoom stack)
+- [ ] Exportar a imagen (PNG/SVG)

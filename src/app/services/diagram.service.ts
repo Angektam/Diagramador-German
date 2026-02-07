@@ -156,8 +156,9 @@ export class DiagramService {
     
     console.log('SQL limpio (primeros 500 chars):', cleanSql.substring(0, 500));
     
-    // Regex más flexible para detectar CREATE TABLE
-    const tableRegex = /CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\(([\s\S]*?)\);?/gi;
+    // Regex mejorado para capturar CREATE TABLE completo
+    // Captura todo hasta encontrar ); o ) seguido de ; o fin de línea
+    const tableRegex = /CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:`)?([a-zA-Z0-9_]+)(?:`)?\s*\(((?:[^()]|\([^)]*\))*)\)\s*;?/gi;
     let match;
     const newShapes: DiagramShape[] = [];
     const foreignKeys: { fromTable: string; fromColumn: string; toTable: string; toColumn: string }[] = [];
@@ -170,7 +171,8 @@ export class DiagramService {
       const columnsText = match[2];
       
       console.log(`\n--- Tabla ${tablesFound}: ${tableName} ---`);
-      console.log('Contenido de columnas:', columnsText);
+      console.log('Contenido de columnas (completo):', columnsText);
+      console.log('Longitud:', columnsText.length, 'caracteres');
       
       // Dividir columnas de forma más inteligente
       const colLines = columnsText
@@ -178,7 +180,12 @@ export class DiagramService {
         .map(line => line.trim())
         .filter(line => line.length > 0);
       
-      console.log('Líneas de columnas:', colLines);
+      console.log('Total líneas encontradas:', colLines.length);
+      
+      console.log('Total líneas encontradas:', colLines.length);
+      colLines.forEach((line, idx) => {
+        console.log(`  Línea ${idx + 1}:`, line.substring(0, 80));
+      });
       
       const columns = colLines
         .map(line => {
@@ -275,29 +282,48 @@ export class DiagramService {
     console.log('Detalle de FKs:', foreignKeys);
 
     if (newShapes.length > 0) {
+      // Primero establecer las formas
       this.shapes.set(newShapes);
       
       // Crear conexiones basadas en las foreign keys detectadas
       const newConnections: Connection[] = [];
+      const processedConnections = new Set<string>(); // Para evitar duplicados
+      
       foreignKeys.forEach(fk => {
         console.log(`\nBuscando conexión para FK: ${fk.fromTable}.${fk.fromColumn} -> ${fk.toTable}.${fk.toColumn}`);
         
-        const fromShape = newShapes.find(s => s.tableData?.name === fk.fromTable);
-        const toShape = newShapes.find(s => s.tableData?.name === fk.toTable);
+        // Buscar por nombre de tabla (case-insensitive)
+        const fromShape = newShapes.find(s => 
+          s.tableData?.name?.toLowerCase() === fk.fromTable.toLowerCase()
+        );
+        const toShape = newShapes.find(s => 
+          s.tableData?.name?.toLowerCase() === fk.toTable.toLowerCase()
+        );
         
         console.log('Forma origen encontrada:', fromShape ? fromShape.id : 'NO ENCONTRADA');
         console.log('Forma destino encontrada:', toShape ? toShape.id : 'NO ENCONTRADA');
         
         if (fromShape && toShape) {
-          const connId = 'conn-' + Date.now() + '-' + Math.random();
-          newConnections.push({
-            id: connId,
-            fromId: fromShape.id,
-            toId: toShape.id
-          });
-          console.log('Conexión creada:', connId, fromShape.id, '->', toShape.id);
+          // Crear clave única para evitar duplicados
+          const connKey = `${fromShape.id}-${toShape.id}`;
+          const connKeyReverse = `${toShape.id}-${fromShape.id}`;
+          
+          if (!processedConnections.has(connKey) && !processedConnections.has(connKeyReverse)) {
+            const connId = 'conn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            newConnections.push({
+              id: connId,
+              fromId: fromShape.id,
+              toId: toShape.id
+            });
+            processedConnections.add(connKey);
+            console.log('Conexión creada:', connId, fromShape.id, '->', toShape.id);
+          } else {
+            console.log('Conexión duplicada ignorada');
+          }
         } else {
           console.warn('No se pudo crear conexión - tabla no encontrada');
+          if (!fromShape) console.warn(`  Tabla origen "${fk.fromTable}" no existe`);
+          if (!toShape) console.warn(`  Tabla destino "${fk.toTable}" no existe`);
         }
       });
       
@@ -305,10 +331,17 @@ export class DiagramService {
       console.log('Total conexiones creadas:', newConnections.length);
       console.log('Detalle:', newConnections);
       
+      // Establecer las conexiones
       this.connections.set(newConnections);
       
+      // Mensaje de éxito
       const connMsg = newConnections.length > 0 ? `, ${newConnections.length} relación(es)` : '';
       this.notifications.success(`SQL importado: ${newShapes.length} tabla(s)${connMsg}`);
+      
+      // Si no se detectaron conexiones pero hay FKs, mostrar advertencia
+      if (foreignKeys.length > 0 && newConnections.length === 0) {
+        this.notifications.warning('Se detectaron claves foráneas pero no se pudieron crear las conexiones. Verifica los nombres de las tablas.');
+      }
     } else {
       this.sqlModalOpen.set(true);
       this.notifications.warning('No se detectaron tablas CREATE TABLE. Mostrando SQL en el editor.');

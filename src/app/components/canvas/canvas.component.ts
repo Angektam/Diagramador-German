@@ -9,7 +9,15 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <main class="canvas-wrapper" #wrapperRef (drop)="onDrop($event)" (dragover)="onDragOver($event)" (mousedown)="onCanvasMouseDown($event)" (wheel)="onWheel($event)">
+    <main class="canvas-wrapper" #wrapperRef 
+          (drop)="onDrop($event)" 
+          (dragover)="onDragOver($event)" 
+          (mousedown)="onCanvasMouseDown($event)" 
+          (wheel)="onWheel($event)" 
+          (contextmenu)="onContextMenu($event)"
+          (touchstart)="onTouchStart($event)"
+          (touchmove)="onTouchMove($event)"
+          (touchend)="onTouchEnd($event)">
       <div class="canvas-container" #containerRef [style.transform]="'scale(' + diagram.zoomLevel() / 100 + ')'" [style.transform-origin]="'0 0'">
         <svg class="canvas-grid" #gridRef viewBox="0 0 10000 10000"></svg>
         <svg class="canvas-svg" #svgRef viewBox="0 0 10000 10000">
@@ -279,7 +287,15 @@ import { CommonModule } from '@angular/common';
       </div>
       
       <!-- Mini-mapa -->
-      <div class="minimap" #minimapRef (mousedown)="onMinimapMouseDown($event)">
+      <div class="minimap" 
+           #minimapRef 
+           [style.right.px]="minimapPosition().x" 
+           [style.bottom.px]="minimapPosition().y"
+           (mousedown)="onMinimapMouseDown($event)">
+        <div class="minimap-header" (mousedown)="onMinimapHeaderMouseDown($event)">
+          <span class="minimap-title">🗺️ Mapa</span>
+          <span class="minimap-drag-hint">⋮⋮</span>
+        </div>
         <svg class="minimap-svg" [attr.viewBox]="getMinimapViewBox()">
           <!-- Viewport rectangle -->
           <rect 
@@ -329,8 +345,6 @@ import { CommonModule } from '@angular/common';
     
     .minimap {
       position: absolute;
-      bottom: 20px;
-      right: 20px;
       width: 200px;
       height: 150px;
       background: rgba(17, 17, 17, 0.95);
@@ -338,14 +352,43 @@ import { CommonModule } from '@angular/common';
       border-radius: var(--radius-lg);
       overflow: hidden;
       box-shadow: var(--shadow-lg);
-      cursor: pointer;
       z-index: 100;
       backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .minimap-header {
+      background: rgba(30, 30, 30, 0.95);
+      padding: 6px 10px;
+      cursor: move;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      user-select: none;
+    }
+    
+    .minimap-header:hover {
+      background: rgba(40, 40, 40, 0.95);
+    }
+    
+    .minimap-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    .minimap-drag-hint {
+      font-size: 14px;
+      color: var(--text-secondary);
+      opacity: 0.5;
     }
     
     .minimap-svg {
       width: 100%;
-      height: 100%;
+      flex: 1;
+      cursor: pointer;
     }
     
     .minimap-viewport {
@@ -375,6 +418,26 @@ export class CanvasComponent implements AfterViewInit {
   
   // Minimap viewport
   minimapViewport = signal({ x: 0, y: 0, width: 400, height: 300 });
+  
+  // Minimap position (draggable)
+  minimapPosition = signal({ x: 20, y: 20 }); // Posición desde bottom-right
+  
+  // Canvas panning (arrastrar el fondo)
+  private isPanning = false;
+  private panStart = { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 };
+  private panVelocity = { x: 0, y: 0 };
+  private lastPanTime = 0;
+  private panAnimationFrame: number | null = null;
+  
+  // Touch support
+  private touchStartDistance = 0;
+  private touchStartZoom = 100;
+  private lastTouchX = 0;
+  private lastTouchY = 0;
+  private isTouchPanning = false;
+  
+  // Clipboard for copy/paste
+  private clipboard: DiagramShape[] = [];
 
   ngAfterViewInit(): void {
     this.drawGrid();
@@ -410,10 +473,34 @@ export class CanvasComponent implements AfterViewInit {
     }
     
     // Select all with Ctrl+A
-    if (event.ctrlKey && event.key === 'a') {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
       event.preventDefault();
       this.diagram.selectAllShapes();
       this.notifications.success('Todas las formas seleccionadas');
+    }
+    
+    // Copy with Ctrl+C
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      if (this.diagram.selectedShapeIds().length > 0) {
+        event.preventDefault();
+        this.copySelectedShapes();
+      }
+    }
+    
+    // Paste with Ctrl+V
+    if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+      if (this.clipboard.length > 0) {
+        event.preventDefault();
+        this.pasteShapes();
+      }
+    }
+    
+    // Duplicate with Ctrl+D
+    if ((event.ctrlKey || event.metaKey) && event.key === 'd') {
+      if (this.diagram.selectedShapeIds().length > 0) {
+        event.preventDefault();
+        this.duplicateSelectedShapes();
+      }
     }
     
     // Deselect all with Escape
@@ -421,14 +508,100 @@ export class CanvasComponent implements AfterViewInit {
       this.diagram.clearSelection();
       this.alignmentGuides.set({ horizontal: null, vertical: null });
     }
+    
+    // Toggle panning mode with Space
+    if (event.key === ' ' && !this.isPanning) {
+      event.preventDefault();
+      const wrapper = this.wrapperRef?.nativeElement;
+      if (wrapper) {
+        wrapper.style.cursor = 'grab';
+      }
+    }
   }
   
-  // Zoom with mouse wheel
+  @HostListener('window:keyup', ['$event'])
+  handleKeyUp(event: KeyboardEvent) {
+    // Release panning mode
+    if (event.key === ' ') {
+      const wrapper = this.wrapperRef?.nativeElement;
+      if (wrapper && !this.isPanning) {
+        wrapper.style.cursor = '';
+      }
+    }
+  }
+  
+  // Copy selected shapes to clipboard
+  private copySelectedShapes(): void {
+    const selectedIds = this.diagram.selectedShapeIds();
+    const shapes = this.diagram.shapesList().filter(s => selectedIds.includes(s.id));
+    
+    // Deep clone shapes
+    this.clipboard = shapes.map(shape => ({
+      ...shape,
+      id: shape.id, // Will be replaced on paste
+      tableData: shape.tableData ? {
+        name: shape.tableData.name,
+        columns: shape.tableData.columns.map(col => ({ ...col }))
+      } : undefined
+    }));
+    
+    this.notifications.success(`${this.clipboard.length} forma(s) copiada(s)`);
+  }
+  
+  // Paste shapes from clipboard
+  private pasteShapes(): void {
+    if (this.clipboard.length === 0) return;
+    
+    const PASTE_OFFSET = 30;
+    const newShapeIds: string[] = [];
+    
+    // Calculate center of clipboard shapes
+    const minX = Math.min(...this.clipboard.map(s => s.x));
+    const minY = Math.min(...this.clipboard.map(s => s.y));
+    
+    // Get viewport center for paste position
+    const wrapper = this.wrapperRef.nativeElement;
+    const zoom = this.diagram.zoomLevel() / 100;
+    const viewportCenterX = (wrapper.scrollLeft + wrapper.clientWidth / 2) / zoom;
+    const viewportCenterY = (wrapper.scrollTop + wrapper.clientHeight / 2) / zoom;
+    
+    // Paste shapes with offset
+    this.clipboard.forEach(shape => {
+      const offsetX = shape.x - minX;
+      const offsetY = shape.y - minY;
+      
+      const newShape: DiagramShape = {
+        ...shape,
+        id: `shape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        x: viewportCenterX + offsetX - 60, // Center around viewport
+        y: viewportCenterY + offsetY - 40,
+      };
+      
+      this.diagram.addShape(newShape);
+      newShapeIds.push(newShape.id);
+    });
+    
+    // Select pasted shapes
+    this.diagram.clearSelection();
+    newShapeIds.forEach(id => this.diagram.toggleShapeSelection(id));
+    
+    this.notifications.success(`${newShapeIds.length} forma(s) pegada(s)`);
+  }
+  
+  // Duplicate selected shapes (copy + paste in one action)
+  private duplicateSelectedShapes(): void {
+    this.copySelectedShapes();
+    this.pasteShapes();
+  }
+  
+  // Zoom with mouse wheel (Ctrl+Wheel) or Scroll (Wheel)
   onWheel(event: WheelEvent) {
-    if (event.ctrlKey) {
+    const wrapper = this.wrapperRef.nativeElement;
+    
+    if (event.ctrlKey || event.metaKey) {
+      // Zoom con Ctrl+Wheel (como diagrams.net)
       event.preventDefault();
       
-      const wrapper = this.wrapperRef.nativeElement;
       const oldZoom = this.diagram.zoomLevel();
       const delta = event.deltaY > 0 ? -10 : 10;
       const newZoom = Math.max(25, Math.min(200, oldZoom + delta));
@@ -454,6 +627,27 @@ export class CanvasComponent implements AfterViewInit {
           this.updateMinimapViewport();
         }, 0);
       }
+    } else if (event.shiftKey) {
+      // Shift+Wheel = Scroll horizontal (como diagrams.net)
+      event.preventDefault();
+      wrapper.scrollLeft += event.deltaY;
+      this.updateMinimapViewport();
+    } else {
+      // Scroll normal: vertical con rueda, horizontal con trackpad
+      // No prevenir default para permitir scroll nativo del navegador
+      
+      // Si hay deltaX (scroll horizontal en trackpad), usarlo
+      if (event.deltaX !== 0) {
+        wrapper.scrollLeft += event.deltaX;
+      }
+      
+      // Scroll vertical con la rueda
+      if (event.deltaY !== 0) {
+        wrapper.scrollTop += event.deltaY;
+      }
+      
+      // Actualizar minimap
+      this.updateMinimapViewport();
     }
   }
   
@@ -511,6 +705,14 @@ export class CanvasComponent implements AfterViewInit {
   
   // Minimap navigation
   onMinimapMouseDown(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    
+    // Si hace click en el header, arrastrar el mini-mapa
+    if (target.closest('.minimap-header')) {
+      return; // El header tiene su propio handler
+    }
+    
+    // Navegación normal en el SVG
     event.preventDefault();
     const minimap = this.minimapRef.nativeElement;
     const rect = minimap.getBoundingClientRect();
@@ -521,7 +723,7 @@ export class CanvasComponent implements AfterViewInit {
     
     const moveToPosition = (e: MouseEvent) => {
       const relX = (e.clientX - rect.left) / rect.width;
-      const relY = (e.clientY - rect.top) / rect.height;
+      const relY = (e.clientY - rect.top - 30) / (rect.height - 30); // Restar altura del header
       
       const x = vbX + (relX * vbWidth);
       const y = vbY + (relY * vbHeight);
@@ -535,6 +737,48 @@ export class CanvasComponent implements AfterViewInit {
     moveToPosition(event);
     
     const onMove = (e: MouseEvent) => moveToPosition(e);
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+  
+  // Minimap drag (igual que las tablas)
+  onMinimapHeaderMouseDown(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const wrapper = this.wrapperRef.nativeElement;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startPosX = this.minimapPosition().x;
+    const startPosY = this.minimapPosition().y;
+    
+    const onMove = (e: MouseEvent) => {
+      // Calcular delta (invertido porque usamos right/bottom)
+      const deltaX = startX - e.clientX;
+      const deltaY = startY - e.clientY;
+      
+      let newX = startPosX + deltaX;
+      let newY = startPosY + deltaY;
+      
+      // Limitar a los bordes del wrapper
+      const minX = 10;
+      const maxX = wrapperRect.width - 220; // 200px width + 20px margin
+      const minY = 10;
+      const maxY = wrapperRect.height - 170; // 150px height + 20px margin
+      
+      newX = Math.max(minX, Math.min(maxX, newX));
+      newY = Math.max(minY, Math.min(maxY, newY));
+      
+      this.minimapPosition.set({ x: newX, y: newY });
+    };
+    
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
@@ -612,12 +856,140 @@ export class CanvasComponent implements AfterViewInit {
     }
     grid.innerHTML = dots;
   }
+  
+  // Prevenir menú contextual para permitir panning con click derecho
+  onContextMenu(event: MouseEvent): void {
+    const target = event.target as Element;
+    // Solo prevenir si no es una forma (para permitir panning en canvas vacío)
+    if (!target.closest('.diagram-shape')) {
+      event.preventDefault();
+    }
+  }
 
   onCanvasMouseDown(event: MouseEvent): void {
     const target = event.target as Element;
+    
+    // Si hace click en el canvas vacío (no en una forma)
     if (!target.closest('.diagram-shape')) {
-      this.diagram.selectShape(null);
-      this.diagram.clearConnectMode();
+      // Click derecho o botón central = panning
+      if (event.button === 2 || event.button === 1) {
+        event.preventDefault();
+        this.startPanning(event);
+        return;
+      }
+      
+      // Click izquierdo normal = deseleccionar
+      if (event.button === 0) {
+        this.diagram.selectShape(null);
+        this.diagram.clearConnectMode();
+        
+        // Si presiona Shift, también activar panning
+        if (event.shiftKey) {
+          event.preventDefault();
+          this.startPanning(event);
+        }
+      }
+    }
+  }
+  
+  // Canvas panning (arrastrar el fondo) con inercia
+  private startPanning(event: MouseEvent): void {
+    this.isPanning = true;
+    const wrapper = this.wrapperRef.nativeElement;
+    
+    this.panStart = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: wrapper.scrollLeft,
+      scrollTop: wrapper.scrollTop
+    };
+    
+    this.panVelocity = { x: 0, y: 0 };
+    this.lastPanTime = Date.now();
+    
+    wrapper.style.cursor = 'grabbing';
+    wrapper.classList.add('panning');
+    
+    // Cancelar cualquier animación de inercia previa
+    if (this.panAnimationFrame) {
+      cancelAnimationFrame(this.panAnimationFrame);
+      this.panAnimationFrame = null;
+    }
+    
+    let lastX = event.clientX;
+    let lastY = event.clientY;
+    let lastTime = Date.now();
+    
+    const onMove = (e: MouseEvent) => {
+      if (!this.isPanning) return;
+      
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastTime;
+      
+      if (deltaTime > 0) {
+        const deltaX = e.clientX - this.panStart.x;
+        const deltaY = e.clientY - this.panStart.y;
+        
+        // Calcular velocidad para inercia
+        const velocityX = (e.clientX - lastX) / deltaTime;
+        const velocityY = (e.clientY - lastY) / deltaTime;
+        
+        this.panVelocity = { x: velocityX, y: velocityY };
+        
+        wrapper.scrollLeft = this.panStart.scrollLeft - deltaX;
+        wrapper.scrollTop = this.panStart.scrollTop - deltaY;
+        
+        lastX = e.clientX;
+        lastY = e.clientY;
+        lastTime = currentTime;
+        
+        this.updateMinimapViewport();
+      }
+    };
+    
+    const onUp = () => {
+      this.isPanning = false;
+      wrapper.style.cursor = '';
+      wrapper.classList.remove('panning');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      
+      // Aplicar inercia al soltar
+      this.applyPanningInertia();
+    };
+    
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+  
+  // Aplicar inercia al panning (deslizamiento suave al soltar)
+  private applyPanningInertia(): void {
+    const wrapper = this.wrapperRef.nativeElement;
+    const friction = 0.92; // Factor de fricción (0-1, más bajo = más fricción)
+    const minVelocity = 0.1; // Velocidad mínima antes de detenerse
+    
+    const animate = () => {
+      // Reducir velocidad gradualmente
+      this.panVelocity.x *= friction;
+      this.panVelocity.y *= friction;
+      
+      // Aplicar velocidad al scroll
+      wrapper.scrollLeft -= this.panVelocity.x * 16; // 16ms por frame
+      wrapper.scrollTop -= this.panVelocity.y * 16;
+      
+      this.updateMinimapViewport();
+      
+      // Continuar animación si la velocidad es significativa
+      if (Math.abs(this.panVelocity.x) > minVelocity || Math.abs(this.panVelocity.y) > minVelocity) {
+        this.panAnimationFrame = requestAnimationFrame(animate);
+      } else {
+        this.panAnimationFrame = null;
+      }
+    };
+    
+    // Iniciar animación solo si hay velocidad significativa
+    if (Math.abs(this.panVelocity.x) > minVelocity || Math.abs(this.panVelocity.y) > minVelocity) {
+      this.panAnimationFrame = requestAnimationFrame(animate);
     }
   }
 
@@ -1032,5 +1404,134 @@ export class CanvasComponent implements AfterViewInit {
   getConnY2(conn: { toId: string }): number {
     const s = this.diagram.shapesList().find(x => x.id === conn.toId);
     return s ? s.y : 0;
+  }
+  
+  // Touch events support for mobile and tablets
+  onTouchStart(event: TouchEvent): void {
+    const target = event.target as Element;
+    
+    // Si toca una forma, no hacer panning
+    if (target.closest('.diagram-shape')) {
+      return;
+    }
+    
+    // Cancelar animación de inercia si existe
+    if (this.panAnimationFrame) {
+      cancelAnimationFrame(this.panAnimationFrame);
+      this.panAnimationFrame = null;
+    }
+    
+    if (event.touches.length === 1) {
+      // Un dedo = panning
+      this.isTouchPanning = true;
+      const touch = event.touches[0];
+      this.lastTouchX = touch.clientX;
+      this.lastTouchY = touch.clientY;
+      this.lastPanTime = Date.now();
+      
+      const wrapper = this.wrapperRef.nativeElement;
+      this.panStart = {
+        x: touch.clientX,
+        y: touch.clientY,
+        scrollLeft: wrapper.scrollLeft,
+        scrollTop: wrapper.scrollTop
+      };
+      
+      this.panVelocity = { x: 0, y: 0 };
+      wrapper.classList.add('panning');
+    } else if (event.touches.length === 2) {
+      // Dos dedos = zoom (pinch)
+      event.preventDefault();
+      this.isTouchPanning = false;
+      
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      
+      const dx = touch2.clientX - touch1.clientX;
+      const dy = touch2.clientY - touch1.clientY;
+      this.touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+      this.touchStartZoom = this.diagram.zoomLevel();
+    }
+  }
+  
+  onTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 1 && this.isTouchPanning) {
+      // Panning con un dedo
+      event.preventDefault();
+      
+      const touch = event.touches[0];
+      const currentTime = Date.now();
+      const deltaTime = currentTime - this.lastPanTime;
+      
+      if (deltaTime > 0) {
+        const deltaX = touch.clientX - this.panStart.x;
+        const deltaY = touch.clientY - this.panStart.y;
+        
+        // Calcular velocidad para inercia
+        const velocityX = (touch.clientX - this.lastTouchX) / deltaTime;
+        const velocityY = (touch.clientY - this.lastTouchY) / deltaTime;
+        
+        this.panVelocity = { x: velocityX, y: velocityY };
+        
+        const wrapper = this.wrapperRef.nativeElement;
+        wrapper.scrollLeft = this.panStart.scrollLeft - deltaX;
+        wrapper.scrollTop = this.panStart.scrollTop - deltaY;
+        
+        this.lastTouchX = touch.clientX;
+        this.lastTouchY = touch.clientY;
+        this.lastPanTime = currentTime;
+        
+        this.updateMinimapViewport();
+      }
+    } else if (event.touches.length === 2) {
+      // Zoom con pinch (dos dedos)
+      event.preventDefault();
+      
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      
+      const dx = touch2.clientX - touch1.clientX;
+      const dy = touch2.clientY - touch1.clientY;
+      const currentDistance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (this.touchStartDistance > 0) {
+        const scale = currentDistance / this.touchStartDistance;
+        const newZoom = Math.max(25, Math.min(200, this.touchStartZoom * scale));
+        this.diagram.setZoom(newZoom);
+      }
+    }
+  }
+  
+  onTouchEnd(event: TouchEvent): void {
+    if (event.touches.length === 0) {
+      // Todos los dedos levantados
+      const wrapper = this.wrapperRef.nativeElement;
+      wrapper.classList.remove('panning');
+      
+      // Aplicar inercia si estaba haciendo panning
+      if (this.isTouchPanning) {
+        this.applyPanningInertia();
+      }
+      
+      this.isTouchPanning = false;
+      this.touchStartDistance = 0;
+      
+    } else if (event.touches.length === 1) {
+      // Quedó un dedo, reiniciar panning
+      const touch = event.touches[0];
+      this.lastTouchX = touch.clientX;
+      this.lastTouchY = touch.clientY;
+      this.lastPanTime = Date.now();
+      
+      const wrapper = this.wrapperRef.nativeElement;
+      this.panStart = {
+        x: touch.clientX,
+        y: touch.clientY,
+        scrollLeft: wrapper.scrollLeft,
+        scrollTop: wrapper.scrollTop
+      };
+      
+      this.panVelocity = { x: 0, y: 0 };
+    }
   }
 }

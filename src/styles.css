@@ -45,39 +45,151 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbars personalizados (tema oscuro) */
-.shape-categories,
-.format-content,
-.modal-body,
+/* Scrollbars para el body y elementos principales */
+body::-webkit-scrollbar,
+html::-webkit-scrollbar,
+.app-container::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  background: rgba(20, 20, 20, 0.95);
+}
+
+body::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track,
+.app-container::-webkit-scrollbar-track {
+  background: rgba(20, 20, 20, 0.95);
+  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+body::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb,
+.app-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #505050 0%, #404040 100%);
+  border-radius: 7px;
+  border: 2px solid rgba(20, 20, 20, 0.95);
+  transition: background 0.2s;
+}
+
+body::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:hover,
+.app-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #606060 0%, #505050 100%);
+}
+
+body::-webkit-scrollbar-thumb:active,
+html::-webkit-scrollbar-thumb:active,
+.app-container::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
+body::-webkit-scrollbar-corner,
+html::-webkit-scrollbar-corner,
+.app-container::-webkit-scrollbar-corner {
+  background: rgba(20, 20, 20, 0.95);
+  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+body::-webkit-scrollbar-button,
+html::-webkit-scrollbar-button,
+.app-container::-webkit-scrollbar-button {
+  display: block;
+  height: 14px;
+  width: 14px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid var(--border-color);
+}
+
+body::-webkit-scrollbar-button:hover,
+html::-webkit-scrollbar-button:hover,
+.app-container::-webkit-scrollbar-button:hover {
+  background: rgba(40, 40, 40, 0.95);
+}
+
+/* Scrollbar más ancho para el canvas (Firefox) */
 .canvas-wrapper {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: auto; /* Usar scrollbar de tamaño normal */
+  scrollbar-color: #505050 rgba(20, 20, 20, 0.95);
+  overflow: scroll !important; /* Forzar scrollbars siempre visibles */
 }
-.shape-categories::-webkit-scrollbar,
-.format-content::-webkit-scrollbar,
-.modal-body::-webkit-scrollbar,
+
+/* Scrollbars más grandes y visibles para el canvas */
 .canvas-wrapper::-webkit-scrollbar {
-  width: var(--scrollbar-width);
-  height: var(--scrollbar-width);
+  width: 14px;
+  height: 14px;
+  background: rgba(20, 20, 20, 0.95);
 }
-.shape-categories::-webkit-scrollbar-track,
-.format-content::-webkit-scrollbar-track,
-.modal-body::-webkit-scrollbar-track,
+
 .canvas-wrapper::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
+  background: rgba(20, 20, 20, 0.95);
+  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
 }
-.shape-categories::-webkit-scrollbar-thumb,
-.format-content::-webkit-scrollbar-thumb,
-.modal-body::-webkit-scrollbar-thumb,
+
 .canvas-wrapper::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
+  background: linear-gradient(135deg, #505050 0%, #404040 100%);
+  border-radius: 7px;
+  border: 2px solid rgba(20, 20, 20, 0.95);
+  transition: background 0.2s, transform 0.2s;
+  min-height: 40px; /* Altura mínima para mejor visibilidad */
+  min-width: 40px; /* Ancho mínimo para mejor visibilidad */
 }
-.shape-categories::-webkit-scrollbar-thumb:hover,
-.format-content::-webkit-scrollbar-thumb:hover,
-.modal-body::-webkit-scrollbar-thumb:hover,
+
 .canvas-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  background: linear-gradient(135deg, #606060 0%, #505050 100%);
+  border: 2px solid rgba(20, 20, 20, 0.8);
+}
+
+.canvas-wrapper::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
+.canvas-wrapper::-webkit-scrollbar-corner {
+  background: rgba(20, 20, 20, 0.95);
+  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Botones de las scrollbars (flechas) - Siempre visibles con iconos */
+.canvas-wrapper::-webkit-scrollbar-button {
+  display: block;
+  height: 14px;
+  width: 14px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid var(--border-color);
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:hover {
+  background: rgba(40, 40, 40, 0.95);
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:vertical:decrement {
+  border-bottom: 1px solid var(--border-color);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,7.5 10.5,7.5 7,3.5"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:vertical:increment {
+  border-top: 1px solid var(--border-color);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,3.5 7,7.5 10.5,3.5"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:horizontal:decrement {
+  border-right: 1px solid var(--border-color);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="7.5,3.5 3.5,7 7.5,10.5"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:horizontal:increment {
+  border-left: 1px solid var(--border-color);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,3.5 7.5,7 3.5,10.5"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* Focus visible (accesibilidad) */
@@ -227,6 +339,38 @@ app-root {
   max-height: 100vh;
 }
 
+/* Scrollbars para paneles laterales */
+.shapes-panel::-webkit-scrollbar,
+.format-panel::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background: rgba(15, 15, 15, 0.95);
+}
+
+.shapes-panel::-webkit-scrollbar-track,
+.format-panel::-webkit-scrollbar-track {
+  background: rgba(15, 15, 15, 0.95);
+  border-left: 1px solid var(--border-color);
+}
+
+.shapes-panel::-webkit-scrollbar-thumb,
+.format-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #454545 0%, #353535 100%);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 15, 15, 0.95);
+  transition: background 0.2s;
+}
+
+.shapes-panel::-webkit-scrollbar-thumb:hover,
+.format-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #555555 0%, #454545 100%);
+}
+
+.shapes-panel::-webkit-scrollbar-thumb:active,
+.format-panel::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
 .panel-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-color);
@@ -275,6 +419,32 @@ app-root {
   padding: 12px;
   flex: 1;
   min-height: 0;
+}
+
+/* Scrollbar mejorada para categorías de formas */
+.shape-categories::-webkit-scrollbar {
+  width: 10px;
+}
+
+.shape-categories::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 5px;
+  margin: 4px 0;
+}
+
+.shape-categories::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #454545 0%, #353535 100%);
+  border-radius: 5px;
+  border: 2px solid rgba(10, 10, 10, 0.5);
+  transition: background 0.2s;
+}
+
+.shape-categories::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #555555 0%, #454545 100%);
+}
+
+.shape-categories::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
 }
 
 .shape-categories details {
@@ -357,7 +527,22 @@ app-root {
   background-size: 100% 100%, 20px 20px, 20px 20px;
   background-color: #0a0a0a;
   position: relative;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  cursor: default;
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; /* Prevenir scroll en el body */
+}
+
+/* Cursor durante panning */
+.canvas-wrapper.panning {
+  cursor: grabbing !important;
+  touch-action: none;
+  user-select: none;
+}
+
+.canvas-wrapper:active {
+  cursor: grabbing;
 }
 
 .canvas-container {
@@ -369,6 +554,7 @@ app-root {
   margin: 0;
   transition: transform 0.1s ease-out;
   will-change: transform;
+  touch-action: none; /* Prevenir gestos nativos en el contenedor */
 }
 
 .canvas-grid {
@@ -378,6 +564,7 @@ app-root {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  touch-action: none;
 }
 
 .canvas-svg {
@@ -387,6 +574,7 @@ app-root {
   width: 100%;
   height: 100%;
   cursor: default;
+  touch-action: none; /* Permitir control manual de gestos */
 }
 
 #connections-layer {
@@ -435,6 +623,32 @@ app-root {
 .format-content {
   padding: 16px;
   overflow-y: auto;
+}
+
+/* Scrollbar mejorada para panel de formato */
+.format-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.format-content::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 5px;
+  margin: 4px 0;
+}
+
+.format-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #454545 0%, #353535 100%);
+  border-radius: 5px;
+  border: 2px solid rgba(10, 10, 10, 0.5);
+  transition: background 0.2s;
+}
+
+.format-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #555555 0%, #454545 100%);
+}
+
+.format-content::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
 }
 
 .format-content .hint {
@@ -739,6 +953,32 @@ app-root {
   gap: 14px;
 }
 
+/* Scrollbar mejorada para modales */
+.modal-body::-webkit-scrollbar {
+  width: 10px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 5px;
+  margin: 4px 0;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #454545 0%, #353535 100%);
+  border-radius: 5px;
+  border: 2px solid rgba(10, 10, 10, 0.5);
+  transition: background 0.2s;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #555555 0%, #454545 100%);
+}
+
+.modal-body::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
 .modal-body label {
   font-size: 12px;
   font-weight: 600;
@@ -922,24 +1162,6 @@ app-root {
   --text: var(--text-primary);
   --hover: rgba(255, 255, 255, 0.05);
   --border: var(--border-color);
-}
-
-/* Mejoras para el scroll del panel de formas */
-.shape-categories::-webkit-scrollbar {
-  width: 6px;
-}
-
-.shape-categories::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.shape-categories::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 3px;
-}
-
-.shape-categories::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
 }
 
 /* Hacer el panel de formas más compacto */

@@ -116,6 +116,46 @@ Paso 1: Click normal        Paso 2: Ctrl+Click
 
 ---
 
+### 5️⃣ Copiar y Pegar
+
+```
+Paso 1: Seleccionar          Paso 2: Copiar (Ctrl+C)
+┌──────────────┐            ┌──────────────┐
+│   ┏━┓        │            │   ┏━┓        │
+│   ┃A┃        │            │   ┃A┃ ←Copiado
+│   ┗━┛        │            │   ┗━┛        │
+│              │            │              │
+└──────────────┘            └──────────────┘
+
+Paso 3: Pegar (Ctrl+V)      Paso 4: Resultado
+┌──────────────┐            ┌──────────────┐
+│   ┌─┐        │            │   ┌─┐  ┏━┓   │
+│   │A│        │            │   │A│  ┃A┃   │
+│   └─┘        │            │   └─┘  ┗━┛   │
+│              │            │    ↑    ↑    │
+└──────────────┘            └────┴────┴────┘
+                              Original Copia
+```
+
+**Pasos:**
+1. Selecciona una o más formas
+2. Presiona `Ctrl + C` para copiar
+3. Presiona `Ctrl + V` para pegar
+4. Las formas aparecen en el centro del viewport
+
+**Atajos útiles:**
+- `Ctrl + C` = Copiar
+- `Ctrl + V` = Pegar
+- `Ctrl + D` = Duplicar (copiar + pegar en un paso)
+
+**Características:**
+- ✅ Mantiene colores y estilos
+- ✅ Copia datos de tablas completos
+- ✅ Pega múltiples formas manteniendo posiciones relativas
+- ✅ Selecciona automáticamente las formas pegadas
+
+---
+
 ## 🎯 Flujo de Trabajo Típico
 
 ### Escenario: Organizar un diagrama desordenado
@@ -182,6 +222,14 @@ Paso 1: Click normal        Paso 2: Ctrl+Click
 4. Mueve grupos completos de una vez
 ```
 
+### 📋 Duplicación Rápida
+```
+1. Selecciona formas que quieres duplicar
+2. Presiona Ctrl+D (duplicar instantáneo)
+3. O usa Ctrl+C, navega, Ctrl+V (copiar/pegar)
+4. Crea patrones y estructuras repetitivas
+```
+
 ### 📐 Alineación Perfecta
 ```
 1. Arrastra una forma cerca de otra
@@ -200,6 +248,9 @@ Paso 1: Click normal        Paso 2: Ctrl+Click
 ╠════════════════════════════════════════════╣
 ║  Ctrl + Click    │ Selección múltiple     ║
 ║  Ctrl + A        │ Seleccionar todo       ║
+║  Ctrl + C        │ Copiar                 ║
+║  Ctrl + V        │ Pegar                  ║
+║  Ctrl + D        │ Duplicar               ║
 ║  Escape          │ Deseleccionar          ║
 ║  Delete/Backsp   │ Eliminar selección     ║
 ║  G               │ Toggle Snap to Grid    ║
@@ -238,6 +289,15 @@ Paso 1: Click normal        Paso 2: Ctrl+Click
 5. Navega eficientemente sin perderte
 ```
 
+### Ejemplo 4: Duplicar estructura de tablas
+```
+1. Selecciona una tabla con Ctrl+Click
+2. Presiona Ctrl+D para duplicar
+3. Arrastra la copia a su nueva posición
+4. Edita el nombre y columnas
+5. Repite para crear esquema completo rápidamente
+```
+
 ---
 
 ## 🐛 Solución de Problemas
@@ -273,6 +333,7 @@ ANTES                          DESPUÉS
 ❌ Zoom solo con botones       ✅ Ctrl+Rueda intuitivo
 ❌ Alineación manual           ✅ Guías automáticas
 ❌ Una forma a la vez          ✅ Selección múltiple
+❌ Duplicación manual          ✅ Copiar/Pegar/Duplicar
 ❌ Difícil organizar           ✅ Snap to grid
 ❌ Sin feedback visual         ✅ Guías y highlights
 ```
