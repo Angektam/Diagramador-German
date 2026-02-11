@@ -107,87 +107,83 @@ html::-webkit-scrollbar-button:hover,
   background: rgba(40, 40, 40, 0.95);
 }
 
-/* Scrollbar más ancho para el canvas (Firefox) */
-.canvas-wrapper {
-  scrollbar-width: auto; /* Usar scrollbar de tamaño normal */
-  scrollbar-color: #505050 rgba(20, 20, 20, 0.95);
-  overflow: scroll !important; /* Forzar scrollbars siempre visibles */
-}
-
-/* Scrollbars más grandes y visibles para el canvas */
+/* Scrollbars estilo draw.io - Siempre visibles y funcionales */
 .canvas-wrapper::-webkit-scrollbar {
-  width: 14px;
-  height: 14px;
-  background: rgba(20, 20, 20, 0.95);
+  width: 18px; /* Más anchas para mejor visibilidad */
+  height: 18px;
+  background: #1a1a1a; /* Fondo oscuro sólido */
 }
 
 .canvas-wrapper::-webkit-scrollbar-track {
-  background: rgba(20, 20, 20, 0.95);
-  border-left: 1px solid var(--border-color);
-  border-top: 1px solid var(--border-color);
+  background: #1a1a1a;
+  border-left: 1px solid #2a2a2a;
+  border-top: 1px solid #2a2a2a;
 }
 
 .canvas-wrapper::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #505050 0%, #404040 100%);
-  border-radius: 7px;
-  border: 2px solid rgba(20, 20, 20, 0.95);
-  transition: background 0.2s, transform 0.2s;
-  min-height: 40px; /* Altura mínima para mejor visibilidad */
-  min-width: 40px; /* Ancho mínimo para mejor visibilidad */
+  background: #505050; /* Gris medio visible */
+  border-radius: 9px;
+  border: 3px solid #1a1a1a; /* Borde para separación */
+  transition: background 0.2s ease;
+  min-height: 60px; /* Altura mínima para mejor agarre */
+  min-width: 60px;
 }
 
 .canvas-wrapper::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #606060 0%, #505050 100%);
-  border: 2px solid rgba(20, 20, 20, 0.8);
+  background: #606060; /* Más claro al hover */
 }
 
 .canvas-wrapper::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: #707070; /* Aún más claro al arrastrar */
 }
 
 .canvas-wrapper::-webkit-scrollbar-corner {
-  background: rgba(20, 20, 20, 0.95);
-  border-left: 1px solid var(--border-color);
-  border-top: 1px solid var(--border-color);
+  background: #1a1a1a;
+  border-left: 1px solid #2a2a2a;
+  border-top: 1px solid #2a2a2a;
 }
 
-/* Botones de las scrollbars (flechas) - Siempre visibles con iconos */
+/* Botones de las scrollbars (flechas) - Estilo draw.io */
 .canvas-wrapper::-webkit-scrollbar-button {
   display: block;
-  height: 14px;
-  width: 14px;
-  background: rgba(30, 30, 30, 0.95);
-  border: 1px solid var(--border-color);
+  height: 18px;
+  width: 18px;
+  background: #252525;
+  border: 1px solid #2a2a2a;
 }
 
 .canvas-wrapper::-webkit-scrollbar-button:hover {
-  background: rgba(40, 40, 40, 0.95);
+  background: #303030;
+}
+
+.canvas-wrapper::-webkit-scrollbar-button:active {
+  background: #3a3a3a;
 }
 
 .canvas-wrapper::-webkit-scrollbar-button:vertical:decrement {
-  border-bottom: 1px solid var(--border-color);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,7.5 10.5,7.5 7,3.5"/></svg>');
+  border-bottom: 1px solid #2a2a2a;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(160, 160, 160)"><polygon points="5,11 13,11 9,6"/></svg>');
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .canvas-wrapper::-webkit-scrollbar-button:vertical:increment {
-  border-top: 1px solid var(--border-color);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,3.5 7,7.5 10.5,3.5"/></svg>');
+  border-top: 1px solid #2a2a2a;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(160, 160, 160)"><polygon points="5,6 9,11 13,6"/></svg>');
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .canvas-wrapper::-webkit-scrollbar-button:horizontal:decrement {
-  border-right: 1px solid var(--border-color);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="7.5,3.5 3.5,7 7.5,10.5"/></svg>');
+  border-right: 1px solid #2a2a2a;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(160, 160, 160)"><polygon points="11,5 6,9 11,13"/></svg>');
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .canvas-wrapper::-webkit-scrollbar-button:horizontal:increment {
-  border-left: 1px solid var(--border-color);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(148, 163, 184)"><polygon points="3.5,3.5 7.5,7 3.5,10.5"/></svg>');
+  border-left: 1px solid #2a2a2a;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="rgb(160, 160, 160)"><polygon points="6,5 11,9 6,13"/></svg>');
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -387,6 +383,145 @@ app-root {
   letter-spacing: -0.02em;
 }
 
+/* Scratchpad Section */
+.scratchpad-section {
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, #0f0f0f 0%, #0a0a0a 100%);
+}
+
+.scratchpad-section details {
+  margin: 0;
+}
+
+.scratchpad-section summary {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  transition: background var(--transition);
+  user-select: none;
+}
+
+.scratchpad-section summary:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.scratchpad-section summary::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.scratchpad-section details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.scratchpad-icon {
+  font-size: 14px;
+}
+
+.scratchpad-area {
+  min-height: 80px;
+  max-height: 200px;
+  padding: 12px;
+  background: #0a0a0a;
+  border-top: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+
+.scratchpad-empty {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.drag-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.scratchpad-items {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.scratchpad-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: grab;
+  transition: all var(--transition);
+  min-height: 50px;
+}
+
+.scratchpad-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.scratchpad-item:active {
+  cursor: grabbing;
+  transform: translateY(0);
+}
+
+.scratchpad-item-preview {
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.remove-scratchpad-item {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.scratchpad-item:hover .remove-scratchpad-item {
+  display: flex;
+}
+
+.remove-scratchpad-item:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.remove-scratchpad-item:active {
+  transform: scale(0.95);
+}
+
 .shape-search {
   flex: 1;
   padding: 8px 12px;
@@ -516,10 +651,12 @@ app-root {
   pointer-events: none;
 }
 
-/* Área del lienzo */
+/* Área del lienzo - Estilo draw.io */
 .canvas-wrapper {
   flex: 1;
-  overflow: auto;
+  overflow: scroll !important; /* Scrollbars siempre visibles */
+  scrollbar-width: auto; /* Firefox: scrollbar de tamaño normal */
+  scrollbar-color: #505050 #1a1a1a; /* Firefox: thumb y track */
   background: 
     radial-gradient(ellipse 80% 60% at 50% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 55%),
     linear-gradient(180deg, rgba(42, 42, 42, 0.6) 1px, transparent 1px),
@@ -527,11 +664,12 @@ app-root {
   background-size: 100% 100%, 20px 20px, 20px 20px;
   background-color: #0a0a0a;
   position: relative;
-  scroll-behavior: auto;
+  scroll-behavior: auto; /* Scroll responsivo sin animación */
   cursor: default;
   touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; /* Prevenir scroll en el body */
+  overscroll-behavior: contain; /* Sin bounce en los bordes */
+  scrollbar-gutter: stable; /* Reservar espacio para scrollbars */
 }
 
 /* Cursor durante panning */
@@ -541,16 +679,12 @@ app-root {
   user-select: none;
 }
 
-.canvas-wrapper:active {
-  cursor: grabbing;
-}
-
 .canvas-container {
   position: relative;
   min-width: 100%;
   min-height: 100%;
-  width: 10000px;
-  height: 10000px;
+  width: 10000px !important; /* Forzar tamaño grande */
+  height: 10000px !important;
   margin: 0;
   transition: transform 0.1s ease-out;
   will-change: transform;

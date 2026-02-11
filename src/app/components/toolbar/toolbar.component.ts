@@ -3,10 +3,12 @@ import { DiagramService } from '../../services/diagram.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { Router } from '@angular/router';
+import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.component';
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
+  imports: [ChatAssistantComponent],
   template: `
     <header class="toolbar">
       <!-- Menu Bar -->
@@ -25,11 +27,14 @@ import { Router } from '@angular/router';
         <button (click)="onNew()" class="icon-btn" title="Nuevo diagrama">
           📄
         </button>
+        <button (click)="assistant.open()" class="icon-btn assistant-btn" title="Asistente de diagramas">
+          🧙‍♂️
+        </button>
         <button (click)="diagram.openTemplatesModal()" class="icon-btn templates-btn" title="Plantillas">
-          �
+          📋
         </button>
         <button (click)="onFileClick()" class="icon-btn" title="Abrir archivo">
-          �
+          📂
         </button>
         <button (click)="onSaveToGallery()" class="icon-btn" title="Guardar en galería">
           📁
@@ -84,6 +89,9 @@ import { Router } from '@angular/router';
 
       <input #fileInput type="file" (change)="onFile($event)" hidden accept=".json,.sql">
     </header>
+    
+    <!-- Assistant Modal -->
+    <app-chat-assistant #assistant></app-chat-assistant>
   `,
   styles: [`
     .sql-btn {
@@ -97,6 +105,28 @@ import { Router } from '@angular/router';
     .sql-btn:hover {
       background: var(--accent);
       color: white;
+    }
+
+    .assistant-btn {
+      background: rgba(251, 191, 36, 0.15);
+      color: #f59e0b;
+      font-size: 18px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .assistant-btn:hover {
+      background: rgba(251, 191, 36, 0.25);
+      transform: scale(1.1);
+      animation: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(251, 191, 36, 0);
+      }
     }
 
     .templates-btn {
@@ -140,6 +170,7 @@ export class ToolbarComponent {
   notifications = inject(NotificationService);
   
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('assistant') assistant!: ChatAssistantComponent;
 
   getCurrentUser(): string {
     return this.authService.user()?.username || 'Usuario';

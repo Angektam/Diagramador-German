@@ -445,6 +445,12 @@ export class CanvasComponent implements AfterViewInit {
     
     // Centrar el canvas al inicio
     const wrapper = this.wrapperRef.nativeElement;
+    
+    // FORZAR scrollbars siempre visibles
+    wrapper.style.overflow = 'scroll';
+    wrapper.style.overflowX = 'scroll';
+    wrapper.style.overflowY = 'scroll';
+    
     wrapper.scrollLeft = 500; // Empezar en una posición cómoda
     wrapper.scrollTop = 500;
     this.updateMinimapViewport();
@@ -453,19 +459,29 @@ export class CanvasComponent implements AfterViewInit {
     wrapper.addEventListener('scroll', () => {
       this.updateMinimapViewport();
     });
+    
+    // Debug: Verificar tamaños
+    console.log('🔍 Debug Scrollbars:');
+    console.log('Wrapper size:', wrapper.clientWidth, 'x', wrapper.clientHeight);
+    console.log('Container size:', this.containerRef.nativeElement.offsetWidth, 'x', this.containerRef.nativeElement.offsetHeight);
+    console.log('Overflow:', window.getComputedStyle(wrapper).overflow);
   }
   
   // Keyboard shortcuts
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
+    // Ignore keyboard shortcuts if user is typing in an input or textarea
+    const target = event.target as HTMLElement;
+    const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    
     // Toggle snap to grid with 'G' key
-    if (event.key === 'g' || event.key === 'G') {
+    if (!isTyping && (event.key === 'g' || event.key === 'G')) {
       this.snapToGrid = !this.snapToGrid;
       this.notifications.success(`Snap to grid: ${this.snapToGrid ? 'ON' : 'OFF'}`);
     }
     
     // Delete selected shapes with Delete or Backspace
-    if ((event.key === 'Delete' || event.key === 'Backspace') && this.diagram.selectedShapeIds().length > 0) {
+    if (!isTyping && (event.key === 'Delete' || event.key === 'Backspace') && this.diagram.selectedShapeIds().length > 0) {
       event.preventDefault();
       const count = this.diagram.selectedShapeIds().length;
       this.diagram.deleteSelectedShapes();
@@ -473,7 +489,7 @@ export class CanvasComponent implements AfterViewInit {
     }
     
     // Select all with Ctrl+A
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+    if (!isTyping && (event.ctrlKey || event.metaKey) && event.key === 'a') {
       event.preventDefault();
       this.diagram.selectAllShapes();
       this.notifications.success('Todas las formas seleccionadas');
@@ -504,13 +520,13 @@ export class CanvasComponent implements AfterViewInit {
     }
     
     // Deselect all with Escape
-    if (event.key === 'Escape') {
+    if (!isTyping && event.key === 'Escape') {
       this.diagram.clearSelection();
       this.alignmentGuides.set({ horizontal: null, vertical: null });
     }
     
-    // Toggle panning mode with Space
-    if (event.key === ' ' && !this.isPanning) {
+    // Toggle panning mode with Space (only if not typing)
+    if (!isTyping && event.key === ' ' && !this.isPanning) {
       event.preventDefault();
       const wrapper = this.wrapperRef?.nativeElement;
       if (wrapper) {
@@ -521,8 +537,12 @@ export class CanvasComponent implements AfterViewInit {
   
   @HostListener('window:keyup', ['$event'])
   handleKeyUp(event: KeyboardEvent) {
+    // Ignore if user is typing
+    const target = event.target as HTMLElement;
+    const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    
     // Release panning mode
-    if (event.key === ' ') {
+    if (!isTyping && event.key === ' ') {
       const wrapper = this.wrapperRef?.nativeElement;
       if (wrapper && !this.isPanning) {
         wrapper.style.cursor = '';
@@ -848,10 +868,10 @@ export class CanvasComponent implements AfterViewInit {
     const size = 20;
     const canvasSize = 10000; // Canvas muy grande (10000x10000)
     let dots = '';
-    // Dibujar solo cada 2 puntos para mejor performance
+    // Grid más visible - estilo draw.io
     for (let x = 0; x < canvasSize; x += size * 2) {
       for (let y = 0; y < canvasSize; y += size * 2) {
-        dots += `<circle cx="${x}" cy="${y}" r="1" fill="var(--grid-dot)"/>`;
+        dots += `<circle cx="${x}" cy="${y}" r="1.5" fill="rgba(100, 116, 139, 0.4)"/>`;
       }
     }
     grid.innerHTML = dots;
@@ -962,11 +982,11 @@ export class CanvasComponent implements AfterViewInit {
     document.addEventListener('mouseup', onUp);
   }
   
-  // Aplicar inercia al panning (deslizamiento suave al soltar)
+  // Aplicar inercia al panning (deslizamiento suave al soltar) - Estilo draw.io
   private applyPanningInertia(): void {
     const wrapper = this.wrapperRef.nativeElement;
-    const friction = 0.92; // Factor de fricción (0-1, más bajo = más fricción)
-    const minVelocity = 0.1; // Velocidad mínima antes de detenerse
+    const friction = 0.85; // Fricción más alta = menos inercia (más control)
+    const minVelocity = 0.5; // Velocidad mínima más alta = se detiene más rápido
     
     const animate = () => {
       // Reducir velocidad gradualmente

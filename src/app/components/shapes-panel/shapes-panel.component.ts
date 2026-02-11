@@ -80,6 +80,42 @@ const SHAPE_DEFS: ShapeDef[] = [
         <span>Formas</span>
         <input type="text" class="shape-search" placeholder="Buscar..." [ngModel]="search()" (ngModelChange)="search.set($event)">
       </div>
+      
+      <!-- Scratchpad Area -->
+      <div class="scratchpad-section">
+        <details open>
+          <summary>
+            <span class="scratchpad-icon">📋</span>
+            <span>Scratchpad</span>
+          </summary>
+          <div class="scratchpad-area" 
+               (drop)="onScratchpadDrop($event)" 
+               (dragover)="onScratchpadDragOver($event)">
+            @if (scratchpadShapes().length === 0) {
+              <div class="scratchpad-empty">
+                <span class="drag-hint">Arrastra elementos aquí</span>
+              </div>
+            } @else {
+              <div class="scratchpad-items">
+                @for (shape of scratchpadShapes(); track shape.id) {
+                  <div class="scratchpad-item" 
+                       draggable="true"
+                       (dragstart)="onScratchpadItemDragStart($event, shape)"
+                       [title]="shape.title">
+                    <button class="remove-scratchpad-item" 
+                            (click)="removeScratchpadItem(shape.id)"
+                            title="Eliminar">×</button>
+                    <div class="scratchpad-item-preview">
+                      {{ shape.icon }}
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </details>
+      </div>
+      
       <div class="shape-categories">
         @for (cat of categories; track cat.name) {
           <details [open]="cat.open">
@@ -363,6 +399,8 @@ const SHAPE_DEFS: ShapeDef[] = [
 })
 export class ShapesPanelComponent {
   search = signal('');
+  scratchpadShapes = signal<Array<{id: string, shape: string, title: string, icon: string, table?: boolean}>>([]);
+  
   categories = [
     { name: 'Flujo', key: 'flow', open: true },
     { name: 'Base de datos', key: 'database', open: true },
@@ -381,5 +419,72 @@ export class ShapesPanelComponent {
 
   onDragStart(event: DragEvent, item: ShapeDef): void {
     event.dataTransfer?.setData('application/shape', JSON.stringify({ shape: item.shape, table: item.table }));
+  }
+  
+  // Scratchpad methods
+  onScratchpadDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  onScratchpadDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const data = event.dataTransfer?.getData('application/shape');
+    if (!data) return;
+    
+    const { shape, table } = JSON.parse(data);
+    const shapeDef = SHAPE_DEFS.find(s => s.shape === shape);
+    if (!shapeDef) return;
+    
+    // Check if already in scratchpad
+    if (this.scratchpadShapes().some(s => s.shape === shape)) {
+      return;
+    }
+    
+    // Add to scratchpad
+    const newItem = {
+      id: `scratch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      shape: shape,
+      title: shapeDef.title,
+      icon: this.getShapeIcon(shape),
+      table: table
+    };
+    
+    this.scratchpadShapes.update(items => [...items, newItem]);
+  }
+  
+  onScratchpadItemDragStart(event: DragEvent, item: any): void {
+    event.dataTransfer?.setData('application/shape', JSON.stringify({ shape: item.shape, table: item.table }));
+  }
+  
+  removeScratchpadItem(id: string): void {
+    this.scratchpadShapes.update(items => items.filter(item => item.id !== id));
+  }
+  
+  getShapeIcon(shape: string): string {
+    const icons: Record<string, string> = {
+      'rect': '▭',
+      'rounded': '▢',
+      'diamond': '◆',
+      'ellipse': '⬭',
+      'circle': '●',
+      'square': '■',
+      'triangle': '▲',
+      'hexagon': '⬡',
+      'star': '★',
+      'table': '📊',
+      'database': '🗄️',
+      'procedure': '⚙️',
+      'view': '👁️',
+      'arrow-right': '→',
+      'arrow-left': '←',
+      'arrow-up': '↑',
+      'arrow-down': '↓',
+      'cloud': '☁️',
+      'document': '📄',
+    };
+    return icons[shape] || '▭';
   }
 }
