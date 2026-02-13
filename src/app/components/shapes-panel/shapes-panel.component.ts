@@ -68,6 +68,26 @@ const SHAPE_DEFS: ShapeDef[] = [
   { shape: 'database', title: 'Base de datos', category: 'database' },
   { shape: 'schema', title: 'Esquema', category: 'database' },
   { shape: 'trigger', title: 'Trigger', category: 'database' },
+  { shape: 'index', title: 'Índice', category: 'database' },
+  { shape: 'function', title: 'Función', category: 'database' },
+  { shape: 'constraint', title: 'Restricción', category: 'database' },
+  { shape: 'sequence', title: 'Secuencia', category: 'database' },
+  { shape: 'partition', title: 'Partición', category: 'database' },
+  { shape: 'materialized-view', title: 'Vista materializada', category: 'database' },
+  { shape: 'synonym', title: 'Sinónimo', category: 'database' },
+  { shape: 'package', title: 'Paquete DB', category: 'database' },
+  { shape: 'cursor', title: 'Cursor', category: 'database' },
+];
+  { shape: 'uml-class', title: 'Clase', category: 'uml' },
+  { shape: 'uml-interface', title: 'Interfaz', category: 'uml' },
+  { shape: 'uml-abstract', title: 'Clase abstracta', category: 'uml' },
+  { shape: 'uml-package', title: 'Paquete', category: 'uml' },
+  { shape: 'uml-component', title: 'Componente', category: 'uml' },
+  { shape: 'uml-actor', title: 'Actor', category: 'uml' },
+  { shape: 'uml-usecase', title: 'Caso de uso', category: 'uml' },
+  { shape: 'uml-note', title: 'Nota UML', category: 'uml' },
+  { shape: 'uml-state', title: 'Estado', category: 'uml' },
+  { shape: 'uml-activity', title: 'Actividad', category: 'uml' },
 ];
 
 @Component({
@@ -193,6 +213,70 @@ const SHAPE_DEFS: ShapeDef[] = [
                         <rect x="5" y="5" width="90" height="50" rx="6" fill="#fce7f3" stroke="#ec4899"/>
                         <text x="50" y="28" text-anchor="middle" fill="#be185d" font-size="9" font-weight="bold">TRIGGER</text>
                         <text x="50" y="44" text-anchor="middle" fill="#db2777" font-size="8">before_insert</text>
+                      </svg>
+                    }
+                    @case ('index') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#ddd6fe" stroke="#7c3aed"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#5b21b6" font-size="9" font-weight="bold">INDEX</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#6d28d9" font-size="8">idx_name</text>
+                      </svg>
+                    }
+                    @case ('function') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="8" fill="#ccfbf1" stroke="#14b8a6"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#0f766e" font-size="9" font-weight="bold">FUNCTION</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#0d9488" font-size="8">fn_name()</text>
+                      </svg>
+                    }
+                    @case ('constraint') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#fed7aa" stroke="#ea580c"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#9a3412" font-size="9" font-weight="bold">CONSTRAINT</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#c2410c" font-size="8">FK / CHECK</text>
+                      </svg>
+                    }
+                    @case ('sequence') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#e0f2fe" stroke="#0284c7"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#075985" font-size="9" font-weight="bold">SEQUENCE</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#0369a1" font-size="8">seq_id</text>
+                      </svg>
+                    }
+                    @case ('partition') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#fef3c7" stroke="#d97706"/>
+                        <line x1="35" y1="5" x2="35" y2="55" stroke="#d97706" stroke-width="1"/>
+                        <line x1="65" y1="5" x2="65" y2="55" stroke="#d97706" stroke-width="1"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#92400e" font-size="9" font-weight="bold">PARTITION</text>
+                      </svg>
+                    }
+                    @case ('materialized-view') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#d1fae5" stroke="#059669"/>
+                        <text x="50" y="25" text-anchor="middle" fill="#065f46" font-size="8" font-weight="bold">MATERIALIZED</text>
+                        <text x="50" y="40" text-anchor="middle" fill="#047857" font-size="8" font-weight="bold">VIEW</text>
+                      </svg>
+                    }
+                    @case ('synonym') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#fce7f3" stroke="#db2777"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#9f1239" font-size="9" font-weight="bold">SYNONYM</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#be185d" font-size="8">alias</text>
+                      </svg>
+                    }
+                    @case ('package') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#e0e7ff" stroke="#4f46e5"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#3730a3" font-size="9" font-weight="bold">PACKAGE</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#4338ca" font-size="8">pkg_name</text>
+                      </svg>
+                    }
+                    @case ('cursor') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#fef9c3" stroke="#ca8a04"/>
+                        <text x="50" y="28" text-anchor="middle" fill="#713f12" font-size="9" font-weight="bold">CURSOR</text>
+                        <text x="50" y="44" text-anchor="middle" fill="#854d0e" font-size="8">cur_name</text>
                       </svg>
                     }
                     @case ('trapezoid') {
@@ -385,6 +469,184 @@ const SHAPE_DEFS: ShapeDef[] = [
                         <polygon points="95,5 30,5 5,30 30,55 95,55 70,30" fill="var(--shape-fill)" stroke="var(--shape-stroke)"/>
                       </svg>
                     }
+                    @case ('uml-class') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#fff" stroke="#333" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#333" stroke-width="2"/>
+                        <line x1="2" y1="58" x2="118" y2="58" stroke="#333" stroke-width="2"/>
+                        <rect x="40" y="10" width="40" height="12" fill="#e5e7eb"/>
+                        <rect x="10" y="38" width="50" height="8" fill="#f3f4f6"/>
+                        <rect x="10" y="66" width="45" height="8" fill="#f3f4f6"/>
+                      </svg>
+                    }
+                    @case ('uml-interface') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+                        <circle cx="60" cy="18" r="8" fill="none" stroke="#0284c7" stroke-width="2"/>
+                        <line x1="2" y1="35" x2="118" y2="35" stroke="#0284c7" stroke-width="2"/>
+                        <rect x="10" y="45" width="50" height="8" fill="#bfdbfe"/>
+                        <rect x="10" y="60" width="45" height="8" fill="#bfdbfe"/>
+                      </svg>
+                    }
+                    @case ('uml-abstract') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#f59e0b" stroke-width="2"/>
+                        <line x1="2" y1="58" x2="118" y2="58" stroke="#f59e0b" stroke-width="2"/>
+                        <rect x="35" y="10" width="50" height="12" fill="#fde68a"/>
+                        <rect x="10" y="38" width="50" height="8" fill="#fef3c7"/>
+                        <rect x="10" y="66" width="55" height="8" fill="#fef3c7"/>
+                      </svg>
+                    }
+                    @case ('uml-package') {
+                      <svg viewBox="0 0 120 80" width="56" height="38">
+                        <path d="M2,20 L2,78 L118,78 L118,20 L80,20 L80,2 L2,2 Z" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+                        <rect x="40" y="40" width="40" height="10" fill="#cbd5e1"/>
+                      </svg>
+                    }
+                    @case ('uml-component') {
+                      <svg viewBox="0 0 120 80" width="56" height="38">
+                        <rect x="10" y="10" width="100" height="60" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="2" y="20" width="12" height="10" rx="2" fill="#3b82f6"/>
+                        <rect x="2" y="50" width="12" height="10" rx="2" fill="#3b82f6"/>
+                        <rect x="40" y="35" width="40" height="10" fill="#93c5fd"/>
+                      </svg>
+                    }
+                    @case ('uml-actor') {
+                      <svg viewBox="0 0 60 100" width="28" height="48">
+                        <circle cx="30" cy="15" r="10" fill="none" stroke="#333" stroke-width="2"/>
+                        <line x1="30" y1="25" x2="30" y2="55" stroke="#333" stroke-width="2"/>
+                        <line x1="10" y1="40" x2="50" y2="40" stroke="#333" stroke-width="2"/>
+                        <line x1="30" y1="55" x2="15" y2="85" stroke="#333" stroke-width="2"/>
+                        <line x1="30" y1="55" x2="45" y2="85" stroke="#333" stroke-width="2"/>
+                      </svg>
+                    }
+                    @case ('uml-usecase') {
+                      <svg viewBox="0 0 120 70" width="56" height="34">
+                        <ellipse cx="60" cy="35" rx="55" ry="30" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <rect x="35" y="30" width="50" height="10" fill="#fde68a"/>
+                      </svg>
+                    }
+                    @case ('uml-note') {
+                      <svg viewBox="0 0 100 80" width="48" height="38">
+                        <path d="M5,5 L95,5 L95,60 L80,75 L5,75 Z M80,60 L80,75 L95,60 Z" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+                        <line x1="15" y1="25" x2="75" y2="25" stroke="#ca8a04" stroke-width="1"/>
+                        <line x1="15" y1="35" x2="70" y2="35" stroke="#ca8a04" stroke-width="1"/>
+                        <line x1="15" y1="45" x2="65" y2="45" stroke="#ca8a04" stroke-width="1"/>
+                      </svg>
+                    }
+                    @case ('uml-state') {
+                      <svg viewBox="0 0 120 60" width="56" height="28">
+                        <rect x="5" y="5" width="110" height="50" rx="25" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <rect x="40" y="25" width="40" height="10" fill="#c7d2fe"/>
+                      </svg>
+                    }
+                    @case ('uml-activity') {
+                      <svg viewBox="0 0 120 60" width="56" height="28">
+                        <rect x="5" y="5" width="110" height="50" rx="15" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                        <rect x="40" y="25" width="40" height="10" fill="#bbf7d0"/>
+                      </svg>
+                    }
+                    @case ('server') {
+                      <svg viewBox="0 0 100 100" width="28" height="28">
+                        <rect x="10" y="10" width="80" height="25" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <circle cx="20" cy="22" r="3" fill="#6366f1"/>
+                        <circle cx="30" cy="22" r="3" fill="#10b981"/>
+                        <rect x="10" y="40" width="80" height="25" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <circle cx="20" cy="52" r="3" fill="#6366f1"/>
+                        <circle cx="30" cy="52" r="3" fill="#10b981"/>
+                        <rect x="10" y="70" width="80" height="25" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <circle cx="20" cy="82" r="3" fill="#6366f1"/>
+                        <circle cx="30" cy="82" r="3" fill="#10b981"/>
+                      </svg>
+                    }
+                    @case ('laptop') {
+                      <svg viewBox="0 0 100 80" width="48" height="38">
+                        <rect x="15" y="10" width="70" height="50" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="10" y="60" width="80" height="8" rx="2" fill="#3b82f6"/>
+                        <rect x="20" y="20" width="60" height="35" fill="#1e40af"/>
+                      </svg>
+                    }
+                    @case ('desktop') {
+                      <svg viewBox="0 0 100 100" width="28" height="28">
+                        <rect x="10" y="10" width="80" height="55" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="15" y="15" width="70" height="45" fill="#1e40af"/>
+                        <rect x="40" y="65" width="20" height="15" fill="#3b82f6"/>
+                        <rect x="20" y="80" width="60" height="5" rx="2" fill="#3b82f6"/>
+                      </svg>
+                    }
+                    @case ('mobile') {
+                      <svg viewBox="0 0 60 100" width="28" height="48">
+                        <rect x="10" y="5" width="40" height="90" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="15" y="12" width="30" height="68" fill="#1e40af"/>
+                        <circle cx="30" cy="87" r="4" fill="#3b82f6"/>
+                      </svg>
+                    }
+                    @case ('tablet') {
+                      <svg viewBox="0 0 100 80" width="48" height="38">
+                        <rect x="10" y="5" width="80" height="70" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <rect x="15" y="10" width="70" height="55" fill="#1e40af"/>
+                        <circle cx="50" cy="70" r="3" fill="#3b82f6"/>
+                      </svg>
+                    }
+                    @case ('router') {
+                      <svg viewBox="0 0 100 80" width="48" height="38">
+                        <rect x="10" y="30" width="80" height="40" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                        <circle cx="25" cy="50" r="4" fill="#16a34a"/>
+                        <circle cx="45" cy="50" r="4" fill="#16a34a"/>
+                        <circle cx="65" cy="50" r="4" fill="#16a34a"/>
+                        <line x1="30" y1="10" x2="30" y2="30" stroke="#16a34a" stroke-width="2"/>
+                        <line x1="50" y1="10" x2="50" y2="30" stroke="#16a34a" stroke-width="2"/>
+                        <line x1="70" y1="10" x2="70" y2="30" stroke="#16a34a" stroke-width="2"/>
+                        <circle cx="30" cy="10" r="3" fill="#16a34a"/>
+                        <circle cx="50" cy="10" r="3" fill="#16a34a"/>
+                        <circle cx="70" cy="10" r="3" fill="#16a34a"/>
+                      </svg>
+                    }
+                    @case ('switch') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="15" width="90" height="35" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <circle cx="15" cy="32" r="3" fill="#16a34a"/>
+                        <circle cx="28" cy="32" r="3" fill="#16a34a"/>
+                        <circle cx="41" cy="32" r="3" fill="#16a34a"/>
+                        <circle cx="54" cy="32" r="3" fill="#16a34a"/>
+                        <circle cx="67" cy="32" r="3" fill="#16a34a"/>
+                        <circle cx="80" cy="32" r="3" fill="#16a34a"/>
+                      </svg>
+                    }
+                    @case ('firewall') {
+                      <svg viewBox="0 0 100 100" width="28" height="28">
+                        <rect x="10" y="10" width="80" height="80" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+                        <path d="M50,25 L65,35 L65,60 Q65,70 50,75 Q35,70 35,60 L35,35 Z" fill="#dc2626"/>
+                        <text x="50" y="55" text-anchor="middle" fill="#fff" font-size="20" font-weight="bold">🔥</text>
+                      </svg>
+                    }
+                    @case ('cloud-network') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <path d="M25,35 Q25,20 35,15 Q40,10 50,15 Q60,10 70,15 Q80,20 80,30 Q90,30 90,40 Q90,50 75,50 L25,50 Q10,50 10,40 Q10,30 25,35 Z" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                        <circle cx="35" cy="35" r="3" fill="#3b82f6"/>
+                        <circle cx="50" cy="30" r="3" fill="#3b82f6"/>
+                        <circle cx="65" cy="35" r="3" fill="#3b82f6"/>
+                      </svg>
+                    }
+                    @case ('storage') {
+                      <svg viewBox="0 0 100 100" width="28" height="28">
+                        <rect x="10" y="10" width="80" height="80" rx="4" fill="#f3e8ff" stroke="#9333ea" stroke-width="2"/>
+                        <ellipse cx="50" cy="30" rx="30" ry="8" fill="#9333ea"/>
+                        <rect x="20" y="30" width="60" height="30" fill="#f3e8ff"/>
+                        <line x1="20" y1="30" x2="20" y2="60" stroke="#9333ea" stroke-width="2"/>
+                        <line x1="80" y1="30" x2="80" y2="60" stroke="#9333ea" stroke-width="2"/>
+                        <ellipse cx="50" cy="60" rx="30" ry="8" fill="none" stroke="#9333ea" stroke-width="2"/>
+                      </svg>
+                    }
+                    @case ('printer') {
+                      <svg viewBox="0 0 100 100" width="28" height="28">
+                        <rect x="20" y="10" width="60" height="15" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+                        <rect x="10" y="25" width="80" height="40" rx="4" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+                        <rect x="25" y="50" width="50" height="35" fill="#fff" stroke="#475569" stroke-width="2"/>
+                        <circle cx="75" cy="35" r="4" fill="#16a34a"/>
+                      </svg>
+                    }
                     @default {}
                   }
                 </div>
@@ -404,6 +666,7 @@ export class ShapesPanelComponent {
   categories = [
     { name: 'Flujo', key: 'flow', open: true },
     { name: 'Base de datos', key: 'database', open: true },
+    { name: 'UML', key: 'uml', open: false },
   ];
 
   constructor(private diagram: DiagramService) {}

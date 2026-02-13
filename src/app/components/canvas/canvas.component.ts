@@ -36,6 +36,8 @@ import { CommonModule } from '@angular/common';
             @for (shape of diagram.shapesList(); track shape.id) {
               <g class="diagram-shape" [class.selected]="diagram.selectedShapeIds().includes(shape.id)"
                  [class.table-shape]="shape.type === 'table'"
+                 [class.uml-shape]="shape.type?.startsWith('uml-')"
+                 [class.db-shape]="shape.type === 'database' || shape.type === 'schema' || shape.type === 'trigger' || shape.type === 'procedure' || shape.type === 'index' || shape.type === 'function' || shape.type === 'constraint' || shape.type === 'sequence' || shape.type === 'partition' || shape.type === 'materialized-view' || shape.type === 'synonym' || shape.type === 'package' || shape.type === 'cursor'"
                  [attr.transform]="'translate(' + shape.x + ',' + shape.y + ')'"
                  (mousedown)="onShapeMouseDown($event, shape)">
                 @switch (shape.type) {
@@ -90,6 +92,44 @@ import { CommonModule } from '@angular/common';
                   @case ('trigger') {
                     <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="6" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Trigger' }}</text>
+                  }
+                  @case ('index') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#ddd6fe" stroke="#7c3aed" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Index' }}</text>
+                  }
+                  @case ('function') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Function' }}</text>
+                  }
+                  @case ('constraint') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Constraint' }}</text>
+                  }
+                  @case ('sequence') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Sequence' }}</text>
+                  }
+                  @case ('partition') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+                    <line [attr.x1]="shape.width * 0.33" y1="0" [attr.x2]="shape.width * 0.33" [attr.y2]="shape.height" stroke="#d97706" stroke-width="2"/>
+                    <line [attr.x1]="shape.width * 0.66" y1="0" [attr.x2]="shape.width * 0.66" [attr.y2]="shape.height" stroke="#d97706" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Partition' }}</text>
+                  }
+                  @case ('materialized-view') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Mat. View' }}</text>
+                  }
+                  @case ('synonym') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Synonym' }}</text>
+                  }
+                  @case ('package') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Package' }}</text>
+                  }
+                  @case ('cursor') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Cursor' }}</text>
                   }
                   @case ('trapezoid') {
                     <polygon [attr.points]="getTrapezoidPoints(shape)" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
@@ -266,6 +306,58 @@ import { CommonModule } from '@angular/common';
                       <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
                       <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Vista' }}</text>
                     }
+                  }
+                  @case ('uml-class') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="2" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="0" [attr.y1]="shape.height * 0.33" [attr.x2]="shape.width" [attr.y2]="shape.height * 0.33" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="0" [attr.y1]="shape.height * 0.66" [attr.x2]="shape.width" [attr.y2]="shape.height * 0.66" stroke="#333" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.16" text-anchor="middle" dy=".35em" font-weight="bold" fill="#000">{{ shape.text || 'Clase' }}</text>
+                  }
+                  @case ('uml-interface') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="2" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+                    <circle [attr.cx]="shape.width/2" [attr.cy]="shape.height * 0.2" r="8" fill="none" stroke="#0284c7" stroke-width="2"/>
+                    <line [attr.x1]="0" [attr.y1]="shape.height * 0.4" [attr.x2]="shape.width" [attr.y2]="shape.height * 0.4" stroke="#0284c7" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.7" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'IInterface' }}</text>
+                  }
+                  @case ('uml-abstract') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <line [attr.x1]="0" [attr.y1]="shape.height * 0.33" [attr.x2]="shape.width" [attr.y2]="shape.height * 0.33" stroke="#f59e0b" stroke-width="2"/>
+                    <line [attr.x1]="0" [attr.y1]="shape.height * 0.66" [attr.x2]="shape.width" [attr.y2]="shape.height * 0.66" stroke="#f59e0b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.16" text-anchor="middle" dy=".35em" font-weight="bold" font-style="italic" fill="#000">{{ shape.text || 'Abstract' }}</text>
+                  }
+                  @case ('uml-package') {
+                    <path [attr.d]="'M0,' + (shape.height * 0.25) + ' L0,' + shape.height + ' L' + shape.width + ',' + shape.height + ' L' + shape.width + ',' + (shape.height * 0.25) + ' L' + (shape.width * 0.7) + ',' + (shape.height * 0.25) + ' L' + (shape.width * 0.7) + ',0 L0,0 Z'" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.6" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'paquete' }}</text>
+                  }
+                  @case ('uml-component') {
+                    <rect [attr.x]="12" [attr.y]="0" [attr.width]="shape.width - 12" [attr.height]="shape.height" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+                    <rect x="0" [attr.y]="shape.height * 0.2" width="12" height="10" rx="2" fill="#3b82f6"/>
+                    <rect x="0" [attr.y]="shape.height * 0.5" width="12" height="10" rx="2" fill="#3b82f6"/>
+                    <text [attr.x]="shape.width/2 + 6" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Componente' }}</text>
+                  }
+                  @case ('uml-actor') {
+                    <circle [attr.cx]="shape.width/2" [attr.cy]="shape.height * 0.15" [attr.r]="shape.height * 0.1" fill="none" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="shape.width/2" [attr.y1]="shape.height * 0.25" [attr.x2]="shape.width/2" [attr.y2]="shape.height * 0.55" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="shape.width * 0.2" [attr.y1]="shape.height * 0.4" [attr.x2]="shape.width * 0.8" [attr.y2]="shape.height * 0.4" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="shape.width/2" [attr.y1]="shape.height * 0.55" [attr.x2]="shape.width * 0.3" [attr.y2]="shape.height * 0.85" stroke="#333" stroke-width="2"/>
+                    <line [attr.x1]="shape.width/2" [attr.y1]="shape.height * 0.55" [attr.x2]="shape.width * 0.7" [attr.y2]="shape.height * 0.85" stroke="#333" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.95" text-anchor="middle" dy=".35em" font-size="12" fill="#000">{{ shape.text || '' }}</text>
+                  }
+                  @case ('uml-usecase') {
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 2" [attr.ry]="shape.height/2 - 2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Caso de uso' }}</text>
+                  }
+                  @case ('uml-note') {
+                    <path [attr.d]="'M0,0 L' + (shape.width - 15) + ',0 L' + shape.width + ',15 L' + shape.width + ',' + shape.height + ' L0,' + shape.height + ' Z M' + (shape.width - 15) + ',0 L' + (shape.width - 15) + ',15 L' + shape.width + ',15'" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Nota' }}</text>
+                  }
+                  @case ('uml-state') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" [attr.rx]="shape.height/2" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Estado' }}</text>
+                  }
+                  @case ('uml-activity') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" [attr.rx]="15" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Actividad' }}</text>
                   }
                   @default {
                     <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>

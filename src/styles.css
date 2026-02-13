@@ -742,6 +742,16 @@ app-root {
   fill: var(--text-primary);
 }
 
+/* Textos de figuras UML siempre en negro */
+.diagram-shape.uml-shape text {
+  fill: #000 !important;
+}
+
+/* Textos de figuras de base de datos siempre en negro */
+.diagram-shape.db-shape text {
+  fill: #000 !important;
+}
+
 /* Panel derecho: formato */
 .format-panel {
   width: 260px;
