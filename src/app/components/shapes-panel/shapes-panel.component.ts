@@ -77,7 +77,19 @@ const SHAPE_DEFS: ShapeDef[] = [
   { shape: 'synonym', title: 'Sinónimo', category: 'database' },
   { shape: 'package', title: 'Paquete DB', category: 'database' },
   { shape: 'cursor', title: 'Cursor', category: 'database' },
-];
+  
+  // Entity Relation (ER)
+  { shape: 'er-entity', title: 'Entidad', category: 'er' },
+  { shape: 'er-weak-entity', title: 'Entidad débil', category: 'er' },
+  { shape: 'er-attribute', title: 'Atributo', category: 'er' },
+  { shape: 'er-key-attribute', title: 'Atributo clave', category: 'er' },
+  { shape: 'er-multivalued', title: 'Atributo multivaluado', category: 'er' },
+  { shape: 'er-derived', title: 'Atributo derivado', category: 'er' },
+  { shape: 'er-relationship', title: 'Relación', category: 'er' },
+  { shape: 'er-weak-relationship', title: 'Relación débil', category: 'er' },
+  { shape: 'er-isa', title: 'Es-un (ISA)', category: 'er' },
+  
+  // UML
   { shape: 'uml-class', title: 'Clase', category: 'uml' },
   { shape: 'uml-interface', title: 'Interfaz', category: 'uml' },
   { shape: 'uml-abstract', title: 'Clase abstracta', category: 'uml' },
@@ -277,6 +289,63 @@ const SHAPE_DEFS: ShapeDef[] = [
                         <rect x="5" y="5" width="90" height="50" rx="4" fill="#fef9c3" stroke="#ca8a04"/>
                         <text x="50" y="28" text-anchor="middle" fill="#713f12" font-size="9" font-weight="bold">CURSOR</text>
                         <text x="50" y="44" text-anchor="middle" fill="#854d0e" font-size="8">cur_name</text>
+                      </svg>
+                    }
+                    @case ('er-entity') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#1e40af" font-size="11" font-weight="bold">Entidad</text>
+                      </svg>
+                    }
+                    @case ('er-weak-entity') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <rect x="5" y="5" width="90" height="50" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                        <rect x="10" y="10" width="80" height="40" rx="4" fill="none" stroke="#2563eb" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#1e40af" font-size="10" font-weight="bold">Débil</text>
+                      </svg>
+                    }
+                    @case ('er-attribute') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <ellipse cx="50" cy="30" rx="45" ry="25" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#92400e" font-size="10">atributo</text>
+                      </svg>
+                    }
+                    @case ('er-key-attribute') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <ellipse cx="50" cy="30" rx="45" ry="25" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#92400e" font-size="10" font-weight="bold" text-decoration="underline">clave</text>
+                      </svg>
+                    }
+                    @case ('er-multivalued') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <ellipse cx="50" cy="30" rx="45" ry="25" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                        <ellipse cx="50" cy="30" rx="40" ry="20" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#92400e" font-size="9">multi</text>
+                      </svg>
+                    }
+                    @case ('er-derived') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <ellipse cx="50" cy="30" rx="45" ry="25" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#92400e" font-size="10">derivado</text>
+                      </svg>
+                    }
+                    @case ('er-relationship') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <polygon points="50,5 95,30 50,55 5,30" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#15803d" font-size="10">relación</text>
+                      </svg>
+                    }
+                    @case ('er-weak-relationship') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <polygon points="50,5 95,30 50,55 5,30" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                        <polygon points="50,10 90,30 50,50 10,30" fill="none" stroke="#16a34a" stroke-width="2"/>
+                        <text x="50" y="33" text-anchor="middle" fill="#15803d" font-size="9">débil</text>
+                      </svg>
+                    }
+                    @case ('er-isa') {
+                      <svg viewBox="0 0 100 60" width="48" height="28">
+                        <polygon points="50,5 95,55 5,55" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <text x="50" y="40" text-anchor="middle" fill="#4338ca" font-size="11" font-weight="bold">ISA</text>
                       </svg>
                     }
                     @case ('trapezoid') {
@@ -666,6 +735,7 @@ export class ShapesPanelComponent {
   categories = [
     { name: 'Flujo', key: 'flow', open: true },
     { name: 'Base de datos', key: 'database', open: true },
+    { name: 'Entity Relation', key: 'er', open: false },
     { name: 'UML', key: 'uml', open: false },
   ];
 

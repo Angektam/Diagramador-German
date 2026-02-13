@@ -36,8 +36,9 @@ import { CommonModule } from '@angular/common';
             @for (shape of diagram.shapesList(); track shape.id) {
               <g class="diagram-shape" [class.selected]="diagram.selectedShapeIds().includes(shape.id)"
                  [class.table-shape]="shape.type === 'table'"
-                 [class.uml-shape]="shape.type?.startsWith('uml-')"
+                 [class.uml-shape]="shape.type.startsWith('uml-')"
                  [class.db-shape]="shape.type === 'database' || shape.type === 'schema' || shape.type === 'trigger' || shape.type === 'procedure' || shape.type === 'index' || shape.type === 'function' || shape.type === 'constraint' || shape.type === 'sequence' || shape.type === 'partition' || shape.type === 'materialized-view' || shape.type === 'synonym' || shape.type === 'package' || shape.type === 'cursor'"
+                 [class.er-shape]="shape.type.startsWith('er-')"
                  [attr.transform]="'translate(' + shape.x + ',' + shape.y + ')'"
                  (mousedown)="onShapeMouseDown($event, shape)">
                 @switch (shape.type) {
@@ -130,6 +131,45 @@ import { CommonModule } from '@angular/common';
                   @case ('cursor') {
                     <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Cursor' }}</text>
+                  }
+                  @case ('er-entity') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Entidad' }}</text>
+                  }
+                  @case ('er-weak-entity') {
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                    <rect [attr.x]="5" [attr.y]="5" [attr.width]="shape.width - 10" [attr.height]="shape.height - 10" rx="4" fill="none" stroke="#2563eb" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'Entidad Débil' }}</text>
+                  }
+                  @case ('er-attribute') {
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 2" [attr.ry]="shape.height/2 - 2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'atributo' }}</text>
+                  }
+                  @case ('er-key-attribute') {
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 2" [attr.ry]="shape.height/2 - 2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000" font-weight="bold" text-decoration="underline">{{ shape.text || 'clave' }}</text>
+                  }
+                  @case ('er-multivalued') {
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 2" [attr.ry]="shape.height/2 - 2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 7" [attr.ry]="shape.height/2 - 7" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'multivaluado' }}</text>
+                  }
+                  @case ('er-derived') {
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height/2" [attr.rx]="shape.width/2 - 2" [attr.ry]="shape.height/2 - 2" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'derivado' }}</text>
+                  }
+                  @case ('er-relationship') {
+                    <polygon [attr.points]="''+shape.width/2+',0 '+shape.width+','+shape.height/2+' '+shape.width/2+','+shape.height+' 0,'+shape.height/2" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'relación' }}</text>
+                  }
+                  @case ('er-weak-relationship') {
+                    <polygon [attr.points]="''+shape.width/2+',0 '+shape.width+','+shape.height/2+' '+shape.width/2+','+shape.height+' 0,'+shape.height/2" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                    <polygon [attr.points]="''+shape.width/2+',5 '+(shape.width-5)+','+shape.height/2+' '+shape.width/2+','+(shape.height-5)+' 5,'+shape.height/2" fill="none" stroke="#16a34a" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em" fill="#000">{{ shape.text || 'relación débil' }}</text>
+                  }
+                  @case ('er-isa') {
+                    <polygon [attr.points]="''+shape.width/2+',0 '+shape.width+','+shape.height+' 0,'+shape.height" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                    <text [attr.x]="shape.width/2" [attr.y]="shape.height * 0.65" text-anchor="middle" dy=".35em" fill="#000" font-weight="bold">{{ shape.text || 'ISA' }}</text>
                   }
                   @case ('trapezoid') {
                     <polygon [attr.points]="getTrapezoidPoints(shape)" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>

@@ -752,6 +752,11 @@ app-root {
   fill: #000 !important;
 }
 
+/* Textos de figuras ER siempre en negro */
+.diagram-shape.er-shape text {
+  fill: #000 !important;
+}
+
 /* Panel derecho: formato */
 .format-panel {
   width: 260px;
