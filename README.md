@@ -1,15 +1,15 @@
-# Diagramador con Asistente IA 🧙‍♂️
+# Diagramador con Asistente IA 
 
 ## Nuevo: Asistente de Diagramas
 
 Tu compañero inteligente para crear diagramas de bases de datos mediante comandos de texto natural.
 
 ### Características del Asistente
-- 💬 Chat interactivo flotante
-- 🎯 Comandos en lenguaje natural
-- 💡 Sugerencias contextuales inteligentes
-- ⚡ Acceso rápido a todas las funciones
-- 📊 Información en tiempo real del diagrama
+- Chat interactivo flotante
+- Comandos en lenguaje natural
+- Sugerencias contextuales inteligentes
+-  Acceso rápido a todas las funciones
+- Información en tiempo real del diagrama
 
 [Ver Guía Completa del Asistente](GUIA_ASISTENTE_CHATBOT.md)
 
