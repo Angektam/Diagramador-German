@@ -201,28 +201,30 @@ const SHAPE_DEFS: ShapeDef[] = [
                     }
                     @case ('procedure') {
                       <svg viewBox="0 0 100 60" width="48" height="28">
-                        <rect x="5" y="5" width="90" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b"/>
+                        <rect x="5" y="5" width="90" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
                         <text x="50" y="28" text-anchor="middle" fill="#92400e" font-size="9" font-weight="bold">PROC</text>
                         <text x="50" y="42" text-anchor="middle" fill="#b45309" font-size="8">sp_nombre</text>
                       </svg>
                     }
                     @case ('database') {
                       <svg viewBox="0 0 100 60" width="48" height="28">
-                        <ellipse cx="50" cy="12" rx="40" ry="8" fill="#6366f1" stroke="#4f46e5"/>
-                        <path d="M10 12 v36 q0 4 40 8 q40 -4 40 -8 v-36 q-40 4 -40 8 q-40 -4 -40 -8" fill="#eef2ff" stroke="#6366f1"/>
-                        <ellipse cx="50" cy="48" rx="40" ry="8" fill="none" stroke="#6366f1" stroke-width="2"/>
+                        <ellipse cx="50" cy="12" rx="40" ry="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                        <path d="M10 12 v36 q0 4 40 8 q40 -4 40 -8 v-36" fill="#dbeafe" stroke="none"/>
+                        <line x1="10" y1="12" x2="10" y2="48" stroke="#2563eb" stroke-width="2"/>
+                        <line x1="90" y1="12" x2="90" y2="48" stroke="#2563eb" stroke-width="2"/>
+                        <ellipse cx="50" cy="48" rx="40" ry="8" fill="none" stroke="#2563eb" stroke-width="2"/>
                       </svg>
                     }
                     @case ('schema') {
                       <svg viewBox="0 0 100 60" width="48" height="28">
-                        <path d="M5 20 L5 55 L50 55 L95 20 L50 5 Z" fill="#f1f5f9" stroke="#6366f1"/>
-                        <path d="M5 20 L50 5 L95 20" fill="none" stroke="#6366f1"/>
-                        <text x="50" y="38" text-anchor="middle" fill="#334155" font-size="10" font-weight="bold">Schema</text>
+                        <path d="M5 20 L5 55 L50 55 L95 20 L50 5 Z" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+                        <path d="M5 20 L50 5 L95 20" fill="none" stroke="#6366f1" stroke-width="2"/>
+                        <text x="50" y="38" text-anchor="middle" fill="#4338ca" font-size="10" font-weight="bold">Schema</text>
                       </svg>
                     }
                     @case ('trigger') {
                       <svg viewBox="0 0 100 60" width="48" height="28">
-                        <rect x="5" y="5" width="90" height="50" rx="6" fill="#fce7f3" stroke="#ec4899"/>
+                        <rect x="5" y="5" width="90" height="50" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
                         <text x="50" y="28" text-anchor="middle" fill="#be185d" font-size="9" font-weight="bold">TRIGGER</text>
                         <text x="50" y="44" text-anchor="middle" fill="#db2777" font-size="8">before_insert</text>
                       </svg>

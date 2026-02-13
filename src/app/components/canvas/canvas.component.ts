@@ -77,21 +77,21 @@ import { CommonModule } from '@angular/common';
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || '' }}</text>
                   }
                   @case ('procedure') {
-                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'PROC' }}</text>
                   }
                   @case ('database') {
-                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="12" [attr.rx]="shape.width/2 - 4" [attr.ry]="8" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
-                    <path [attr.d]="getDatabasePath(shape)" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
-                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height - 12" [attr.rx]="shape.width/2 - 4" [attr.ry]="8" fill="none" [attr.stroke]="getStroke(shape)" stroke-width="2"/>
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="12" [attr.rx]="shape.width/2 - 4" [attr.ry]="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                    <path [attr.d]="getDatabasePath(shape)" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                    <ellipse [attr.cx]="shape.width/2" [attr.cy]="shape.height - 12" [attr.rx]="shape.width/2 - 4" [attr.ry]="8" fill="none" stroke="#2563eb" stroke-width="2"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || '' }}</text>
                   }
                   @case ('schema') {
-                    <path [attr.d]="getSchemaPath(shape)" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
+                    <path [attr.d]="getSchemaPath(shape)" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Schema' }}</text>
                   }
                   @case ('trigger') {
-                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="6" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
+                    <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
                     <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Trigger' }}</text>
                   }
                   @case ('index') {
