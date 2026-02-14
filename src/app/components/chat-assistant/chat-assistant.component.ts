@@ -417,7 +417,24 @@ export class ChatAssistantComponent {
 
   sendMessage() {
     const text = this.userInput.trim();
-    if (!text) return;
+    
+    // Validación de mensaje vacío
+    if (!text) {
+      return;
+    }
+
+    // Validación de longitud máxima
+    if (text.length > 1000) {
+      this.addAssistantMessage('El mensaje es demasiado largo. Por favor, usa menos de 1000 caracteres.');
+      return;
+    }
+
+    // Validación de caracteres peligrosos (XSS prevention)
+    const dangerousPattern = /<script|javascript:|onerror=|onclick=/i;
+    if (dangerousPattern.test(text)) {
+      this.addAssistantMessage('El mensaje contiene contenido no permitido.');
+      return;
+    }
 
     // Agregar mensaje del usuario
     this.addUserMessage(text);

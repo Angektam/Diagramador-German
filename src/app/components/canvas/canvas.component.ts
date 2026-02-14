@@ -343,7 +343,7 @@ import { CommonModule } from '@angular/common';
                         <text class="col-text" [attr.x]="8" [attr.y]="42 + i * 22">{{ row.name }} {{ row.type }}{{ row.pk ? ' PK' : '' }}</text>
                       }
                     } @else {
-                      <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" [attr.fill]="getFill(shape)" [attr.stroke]="getStroke(shape)"/>
+                      <rect [attr.width]="shape.width" [attr.height]="shape.height" rx="8" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
                       <text [attr.x]="shape.width/2" [attr.y]="shape.height/2" text-anchor="middle" dy=".35em">{{ shape.text || 'Vista' }}</text>
                     }
                   }
@@ -685,6 +685,19 @@ export class CanvasComponent implements AfterViewInit {
   // Copy selected shapes to clipboard
   private copySelectedShapes(): void {
     const selectedIds = this.diagram.selectedShapeIds();
+    
+    // Validar que hay formas seleccionadas
+    if (selectedIds.length === 0) {
+      this.notifications.warning('No hay formas seleccionadas para copiar');
+      return;
+    }
+
+    // Validar límite de formas a copiar
+    if (selectedIds.length > 100) {
+      this.notifications.error('No se pueden copiar más de 100 formas a la vez');
+      return;
+    }
+
     const shapes = this.diagram.shapesList().filter(s => selectedIds.includes(s.id));
     
     // Deep clone shapes
@@ -702,7 +715,23 @@ export class CanvasComponent implements AfterViewInit {
   
   // Paste shapes from clipboard
   private pasteShapes(): void {
-    if (this.clipboard.length === 0) return;
+    if (this.clipboard.length === 0) {
+      this.notifications.warning('No hay formas en el portapapeles');
+      return;
+    }
+
+    // Validar límite de formas a pegar
+    if (this.clipboard.length > 100) {
+      this.notifications.error('No se pueden pegar más de 100 formas a la vez');
+      return;
+    }
+
+    // Validar que no exceda el límite total de formas
+    const currentShapesCount = this.diagram.shapesList().length;
+    if (currentShapesCount + this.clipboard.length > 500) {
+      this.notifications.error('El diagrama no puede tener más de 500 formas');
+      return;
+    }
     
     const PASTE_OFFSET = 30;
     const newShapeIds: string[] = [];
@@ -722,11 +751,18 @@ export class CanvasComponent implements AfterViewInit {
       const offsetX = shape.x - minX;
       const offsetY = shape.y - minY;
       
+      let newX = viewportCenterX + offsetX - 60;
+      let newY = viewportCenterY + offsetY - 40;
+
+      // Validar límites del canvas
+      newX = Math.max(0, Math.min(9800, newX));
+      newY = Math.max(0, Math.min(9800, newY));
+      
       const newShape: DiagramShape = {
         ...shape,
         id: `shape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        x: viewportCenterX + offsetX - 60, // Center around viewport
-        y: viewportCenterY + offsetY - 40,
+        x: newX,
+        y: newY,
       };
       
       this.diagram.addShape(newShape);
@@ -1151,44 +1187,90 @@ export class CanvasComponent implements AfterViewInit {
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-    const data = event.dataTransfer?.getData('application/shape');
-    if (!data) return;
-    const { shape, table } = JSON.parse(data);
-    const wrapper = this.wrapperRef.nativeElement;
-    const rect = wrapper.getBoundingClientRect();
-    const w = shape === 'table' || shape === 'view' ? 180 : 120;
-    const h = shape === 'table' || shape === 'view' ? 70 : 60;
     
-    // Calcular posición considerando el zoom
-    const zoom = this.diagram.zoomLevel() / 100;
-    const dropX = (event.clientX - rect.left + wrapper.scrollLeft) / zoom;
-    const dropY = (event.clientY - rect.top + wrapper.scrollTop) / zoom;
-    const x = dropX - w / 2;
-    const y = dropY - h / 2;
+    const data = event.dataTransfer?.getData('application/shape');
+    if (!data) {
+      this.notifications.error('No se pudo obtener los datos de la forma');
+      return;
+    }
 
-    const newShape: DiagramShape = {
-      id: `shape-${Date.now()}`,
-      type: shape,
-      x, y,
-      width: w,
-      height: h,
-      fill: '#ffffff',
-      stroke: '#6366f1',
-    };
-    if (shape === 'table') {
-      newShape.tableData = { name: 'Tabla', columns: [{ name: 'id', type: 'INT', pk: true }, { name: 'nombre', type: 'VARCHAR' }] };
+    try {
+      const { shape, table } = JSON.parse(data);
+      
+      // Validar que shape sea un tipo válido
+      if (!shape || typeof shape !== 'string') {
+        this.notifications.error('Tipo de forma inválido');
+        return;
+      }
+
+      const wrapper = this.wrapperRef.nativeElement;
+      const rect = wrapper.getBoundingClientRect();
+      const w = shape === 'table' || shape === 'view' ? 180 : 120;
+      const h = shape === 'table' || shape === 'view' ? 70 : 60;
+      
+      // Calcular posición considerando el zoom
+      const zoom = this.diagram.zoomLevel() / 100;
+      const dropX = (event.clientX - rect.left + wrapper.scrollLeft) / zoom;
+      const dropY = (event.clientY - rect.top + wrapper.scrollTop) / zoom;
+      
+      // Validar que las coordenadas sean números válidos
+      if (isNaN(dropX) || isNaN(dropY) || !isFinite(dropX) || !isFinite(dropY)) {
+        this.notifications.error('Posición inválida para la forma');
+        return;
+      }
+
+      const x = dropX - w / 2;
+      const y = dropY - h / 2;
+
+      // Validar que la posición esté dentro de límites razonables
+      if (x < 0 || y < 0 || x > 9800 || y > 9800) {
+        this.notifications.warning('La forma está fuera del área del canvas');
+      }
+
+      const newShape: DiagramShape = {
+        id: `shape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: shape,
+        x, y,
+        width: w,
+        height: h,
+        fill: '#ffffff',
+        stroke: '#6366f1',
+      };
+      
+      if (shape === 'table') {
+        newShape.tableData = { 
+          name: 'Tabla', 
+          columns: [
+            { name: 'id', type: 'INT', pk: true }, 
+            { name: 'nombre', type: 'VARCHAR' }
+          ] 
+        };
+      }
+      
+      const shapesBefore = this.diagram.shapesList();
+      const lastShape = shapesBefore.length > 0 ? shapesBefore[shapesBefore.length - 1] : null;
+      
+      this.diagram.addShape(newShape);
+      
+      if (lastShape) {
+        this.diagram.addConnection(lastShape.id, newShape.id);
+      }
+      
+      this.diagram.selectShape(newShape.id);
+    } catch (error) {
+      console.error('Error al procesar drop:', error);
+      this.notifications.error('Error al agregar la forma');
     }
-    const shapesBefore = this.diagram.shapesList();
-    const lastShape = shapesBefore.length > 0 ? shapesBefore[shapesBefore.length - 1] : null;
-    this.diagram.addShape(newShape);
-    if (lastShape) {
-      this.diagram.addConnection(lastShape.id, newShape.id);
-    }
-    this.diagram.selectShape(newShape.id);
   }
 
   onShapeMouseDown(event: MouseEvent, shape: DiagramShape): void {
     event.stopPropagation();
+    
+    // Validar que la forma existe
+    if (!shape || !shape.id) {
+      this.notifications.error('Forma inválida');
+      return;
+    }
     
     if (this.diagram.connectingFromShapeId()) {
       const ok = this.diagram.connectToShape(shape.id);
@@ -1213,6 +1295,12 @@ export class CanvasComponent implements AfterViewInit {
     const selectedShapes = this.diagram.shapesList().filter(s => 
       this.diagram.selectedShapeIds().includes(s.id)
     );
+    
+    // Validar que hay formas seleccionadas
+    if (selectedShapes.length === 0) {
+      return;
+    }
+    
     const initialPositions = new Map(
       selectedShapes.map(s => [s.id, { x: s.x, y: s.y }])
     );
@@ -1230,9 +1318,15 @@ export class CanvasComponent implements AfterViewInit {
       
       // Move all selected shapes
       selectedShapes.forEach(s => {
-        const initial = initialPositions.get(s.id)!;
+        const initial = initialPositions.get(s.id);
+        if (!initial) return;
+        
         let newX = initial.x + deltaX;
         let newY = initial.y + deltaY;
+        
+        // Validar límites del canvas
+        newX = Math.max(0, Math.min(9800, newX));
+        newY = Math.max(0, Math.min(9800, newY));
         
         // Apply snap to grid
         if (this.snapToGrid) {

@@ -1,73 +1,97 @@
-# Diagramador con Asistente IA 
+# Diagramador SQL
 
-## Nuevo: Asistente de Diagramas
+Aplicación web para crear diagramas de bases de datos de forma visual e intuitiva.
 
-Tu compañero inteligente para crear diagramas de bases de datos mediante comandos de texto natural.
+## 🚀 Inicio Rápido
 
-### Características del Asistente
-- Chat interactivo flotante
-- Comandos en lenguaje natural
-- Sugerencias contextuales inteligentes
--  Acceso rápido a todas las funciones
-- Información en tiempo real del diagrama
+1. **Instalar dependencias**
+   ```bash
+   npm install
+   ```
 
-[Ver Guía Completa del Asistente](GUIA_ASISTENTE_CHATBOT.md)
+2. **Ejecutar en desarrollo**
+   ```bash
+   npm start
+   ```
+
+3. **Abrir en navegador**
+   ```
+   http://localhost:4200
+   ```
+
+4. **Login con credenciales demo**
+   - Admin: `admin` / `admin123`
+   - Usuario: `usuario` / `123456`
+   - Demo: `demo` / `demo`
+
+## 📚 Documentación
+
+Toda la documentación está consolidada en un solo archivo:
+
+👉 **[DOCUMENTACION_COMPLETA.md](./DOCUMENTACION_COMPLETA.md)**
+
+Incluye:
+- Guía rápida de uso
+- Características principales
+- Asistente de diagramas (Chat + Wizard)
+- Canvas y controles
+- Validaciones de seguridad
+- Mejoras implementadas
+- Solución de problemas
+
+## ✨ Características Destacadas
+
+- 🎨 **Canvas ilimitado** (10000x10000px) con scrollbars
+- 🗺️ **Minimapa interactivo** arrastrable
+- 📥 **Importación SQL** con detección automática de relaciones
+- 🧙‍♂️ **Asistente inteligente** con generación automática de BD
+- 📋 **Copiar/Pegar** con multi-selección (Ctrl+C/V/D)
+- 🔍 **Zoom** 25-200% con Ctrl+Wheel
+- 📱 **Soporte táctil** completo (panning + pinch zoom)
+- 🔒 **Validaciones** completas de seguridad
+- ⌨️ **Atajos de teclado** para productividad
+
+## 🛠️ Tecnologías
+
+- Angular 17 (Standalone Components)
+- TypeScript
+- SVG para renderizado
+- Signals para reactividad
+- CSS moderno con variables
+
+## 📦 Estructura del Proyecto
+
+```
+src/
+├── app/
+│   ├── components/     # Componentes UI
+│   ├── services/       # Lógica de negocio
+│   ├── models/         # Interfaces y tipos
+│   └── guards/         # Protección de rutas
+├── assets/             # Recursos estáticos
+└── styles.css          # Estilos globales
+```
+
+## 🎯 Comandos Útiles
+
+```bash
+# Desarrollo
+npm start
+
+# Build producción
+npm run build
+
+# Tests
+npm test
+
+# Linting
+npm run lint
+```
+
+## 📄 Licencia
+
+Este proyecto es de código abierto.
 
 ---
 
-# Diagramador (Angular)
-
-Aplicación de diagramas tipo draw.io/diagrams.net: creador de diagramas de flujo y diagramas de base de datos con exportación a SQL.
-
-## Requisitos
-
-- Node.js 18+
-- npm
-
-## Instalación
-
-```bash
-npm install
-```
-
-## Desarrollo
-
-```bash
-ng serve
-```
-
-Abre http://localhost:4200 en tu navegador.
-
-## Características
-
-###  Editor de Diagramas
-- **Añadir formas:** arrastra una forma desde el panel izquierdo ("Flujo" o "Base de datos") al lienzo
-- **Mover formas:** haz clic en una forma y arrástrala
-- **Editar:** selecciona una forma y usa el panel derecho para cambiar texto/colores, o **Editar tabla** si es una tabla
-- **Zoom:** usa los botones + y − en la barra superior
-
-###  Sistema de Plantillas (NUEVO)
-- **Plantillas predefinidas:** accede a plantillas de diagramas de flujo y bases de datos comunes
-- **Categorías:**
-  -  Diagramas de flujo: flujo básico, flujo con decisiones
-  -  Base de datos: sistema de usuarios, e-commerce básico
-  -  Mis plantillas: guarda tus propios diagramas como plantillas reutilizables
-- **Crear plantillas personalizadas:** guarda cualquier diagrama como plantilla para uso futuro
-- **Acceso rápido:** botón 📋 en la barra de herramientas
-
-###  Gestión de Archivos
-- **Guardar:** guarda el diagrama en JSON o en la galería personal
-- **Abrir:** carga un archivo `.json` guardado antes
-- **Galería:** accede a todos tus diagramas guardados desde la vista de galería
-
-###  Base de Datos
-- **Exportar SQL:** genera el código SQL para crear la base de datos (CREATE TABLE y FOREIGN KEY)
-- **Importar SQL:** carga archivos `.sql` y genera automáticamente el diagrama de tablas
-- **Editor de tablas:** define columnas, tipos de datos, claves primarias y foráneas
-
-## Uso Rápido
-
-1. **Crear desde plantilla:** Haz clic en 📋 y selecciona una plantilla
-2. **Crear desde cero:** Arrastra formas desde el panel izquierdo
-3. **Guardar:** Usa  para guardar en la galería o descarga como JSON
-4. **Exportar SQL:** Haz clic en el botón SQL para generar el código
+**Nota**: Para información detallada sobre uso, características y validaciones, consulta [DOCUMENTACION_COMPLETA.md](./DOCUMENTACION_COMPLETA.md)

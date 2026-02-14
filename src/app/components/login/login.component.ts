@@ -798,8 +798,27 @@ export class LoginComponent {
   }
 
   onLogin() {
+    // Validación de campos vacíos
     if (!this.loginData.username || !this.loginData.password) {
       this.notifications.error('Por favor completa todos los campos');
+      return;
+    }
+
+    // Validación de longitud mínima
+    if (this.loginData.username.trim().length < 3) {
+      this.notifications.error('El usuario debe tener al menos 3 caracteres');
+      return;
+    }
+
+    if (this.loginData.password.length < 4) {
+      this.notifications.error('La contraseña debe tener al menos 4 caracteres');
+      return;
+    }
+
+    // Validación de caracteres especiales peligrosos
+    const dangerousChars = /[<>\"\']/;
+    if (dangerousChars.test(this.loginData.username) || dangerousChars.test(this.loginData.password)) {
+      this.notifications.error('Los campos contienen caracteres no permitidos');
       return;
     }
 
@@ -807,7 +826,7 @@ export class LoginComponent {
 
     // Simular delay de red
     setTimeout(() => {
-      const success = this.authService.login(this.loginData.username, this.loginData.password);
+      const success = this.authService.login(this.loginData.username.trim(), this.loginData.password);
       
       if (success) {
         this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
@@ -821,24 +840,68 @@ export class LoginComponent {
   }
 
   onRegister() {
+    // Validación de campos vacíos
     if (!this.registerData.username || !this.registerData.email || !this.registerData.password) {
       this.notifications.error('Por favor completa todos los campos');
       return;
+    }
+
+    // Validación de longitud de usuario
+    if (this.registerData.username.trim().length < 3) {
+      this.notifications.error('El usuario debe tener al menos 3 caracteres');
+      return;
+    }
+
+    if (this.registerData.username.trim().length > 50) {
+      this.notifications.error('El usuario no puede exceder 50 caracteres');
+      return;
+    }
+
+    // Validación de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.registerData.email.trim())) {
+      this.notifications.error('Por favor ingresa un email válido');
+      return;
+    }
+
+    // Validación de longitud de contraseña
+    if (this.registerData.password.length < 6) {
+      this.notifications.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (this.registerData.password.length > 100) {
+      this.notifications.error('La contraseña no puede exceder 100 caracteres');
+      return;
+    }
+
+    // Validación de caracteres especiales peligrosos
+    const dangerousChars = /[<>\"\']/;
+    if (dangerousChars.test(this.registerData.username) || 
+        dangerousChars.test(this.registerData.email) || 
+        dangerousChars.test(this.registerData.password)) {
+      this.notifications.error('Los campos contienen caracteres no permitidos');
+      return;
+    }
+
+    // Validación de fortaleza de contraseña
+    if (this.getPasswordStrength() === 'weak') {
+      this.notifications.warning('Tu contraseña es débil. Considera usar una más fuerte.');
     }
 
     this.isLoading.set(true);
 
     setTimeout(() => {
       const success = this.authService.register(
-        this.registerData.username,
-        this.registerData.email,
+        this.registerData.username.trim(),
+        this.registerData.email.trim().toLowerCase(),
         this.registerData.password
       );
       
       if (success) {
         this.notifications.success('¡Cuenta creada exitosamente! 🎉');
         this.isLoginMode.set(true);
-        this.loginData.username = this.registerData.username;
+        this.loginData.username = this.registerData.username.trim();
         this.registerData = { username: '', email: '', password: '' };
       } else {
         this.notifications.error('El usuario ya existe');

@@ -42,6 +42,9 @@ import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.compone
         <button (click)="diagram.openSqlModal()" class="icon-btn sql-btn" title="SQL">
           SQL
         </button>
+        <button (click)="exportAsImage()" class="icon-btn" title="Exportar como imagen">
+          📸
+        </button>
       </div>
 
       <div class="separator"></div>
@@ -209,6 +212,11 @@ export class ToolbarComponent {
     if (name) {
       this.diagram.saveToGallery(name);
     }
+  }
+
+  exportAsImage() {
+    const format = confirm('¿Exportar como PNG? (Cancelar para SVG)') ? 'png' : 'svg';
+    this.diagram.exportAsImage(format);
   }
 
   onFile(event: any) {

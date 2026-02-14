@@ -28,7 +28,32 @@ export class ChatAssistantService {
   };
 
   processCommand(input: string): CommandResponse {
-    const lower = input.toLowerCase().trim();
+    // Validación de entrada
+    if (!input || typeof input !== 'string') {
+      return {
+        message: 'Comando inválido.',
+        suggestions: ['Ayuda', 'Ver comandos']
+      };
+    }
+
+    const trimmed = input.trim();
+    
+    // Validación de longitud
+    if (trimmed.length === 0) {
+      return {
+        message: 'Por favor escribe un comando.',
+        suggestions: ['Ayuda', 'Ver comandos', 'Crear tabla']
+      };
+    }
+
+    if (trimmed.length > 500) {
+      return {
+        message: 'El comando es demasiado largo. Por favor usa menos de 500 caracteres.',
+        suggestions: ['Ayuda', 'Ver comandos']
+      };
+    }
+
+    const lower = trimmed.toLowerCase();
 
     // Detectar comando
     for (const [key, variations] of Object.entries(this.commands)) {
@@ -121,9 +146,17 @@ export class ChatAssistantService {
         // Extraer el tema/descripción de la base de datos
         const description = this.extractDatabaseDescription(originalInput);
         if (description) {
+          // Generar las tablas y obtener el SQL
+          const tables = this.inferTablesFromDescription(description);
+          const sqlCode = this.generateSQLFromTables(tables);
+          
           return {
-            message: `Perfecto! Voy a crear una base de datos para: "${description}"\n\nGenerando tablas y relaciones...`,
-            suggestions: ['Estadísticas', 'Guardar', 'Ver comandos'],
+            message: `✅ Base de datos creada para: "${description}"\n\n` +
+              `📊 Se crearon ${tables.length} tablas con sus relaciones.\n\n` +
+              `📋 Código SQL generado:\n\n` +
+              `\`\`\`sql\n${sqlCode}\`\`\`\n\n` +
+              `💾 El código SQL ha sido copiado al portapapeles.`,
+            suggestions: ['Estadísticas', 'Guardar', 'Nuevo diagrama'],
             action: () => this.generateDatabaseFromDescription(description)
           };
         } else {
@@ -154,11 +187,29 @@ export class ChatAssistantService {
   private handleZoom(input: string): CommandResponse {
     const zoomMatch = input.match(/\d+/);
     if (zoomMatch) {
-      const zoomValue = Math.max(25, Math.min(200, parseInt(zoomMatch[0])));
+      const zoomValue = parseInt(zoomMatch[0]);
+      
+      // Validar que sea un número válido
+      if (isNaN(zoomValue) || !isFinite(zoomValue)) {
+        return {
+          message: 'Valor de zoom inválido. Usa un número entre 25 y 200.',
+          suggestions: ['Zoom 100', 'Zoom 150', 'Zoom 200']
+        };
+      }
+
+      // Validar rango
+      if (zoomValue < 25 || zoomValue > 200) {
+        return {
+          message: 'El zoom debe estar entre 25% y 200%.',
+          suggestions: ['Zoom 25', 'Zoom 100', 'Zoom 200']
+        };
+      }
+
+      const finalZoom = Math.max(25, Math.min(200, zoomValue));
       return {
-        message: `Ajustando el zoom a ${zoomValue}%.`,
+        message: `Ajustando el zoom a ${finalZoom}%.`,
         suggestions: ['Zoom 100', 'Zoom 150', 'Estadísticas'],
-        action: () => this.diagramService.setZoom(zoomValue)
+        action: () => this.diagramService.setZoom(finalZoom)
       };
     } else {
       return {
@@ -195,6 +246,11 @@ export class ChatAssistantService {
   }
 
   private extractName(input: string): string | null {
+    // Validar entrada
+    if (!input || typeof input !== 'string') {
+      return null;
+    }
+
     const patterns = [
       /guardar\s+(?:como\s+)?["']([^"']+)["']/i,
       /guardar\s+(?:como\s+)?(\w+)/i
@@ -202,7 +258,23 @@ export class ChatAssistantService {
 
     for (const pattern of patterns) {
       const match = input.match(pattern);
-      if (match) return match[1].trim();
+      if (match && match[1]) {
+        const name = match[1].trim();
+        
+        // Validar longitud del nombre
+        if (name.length === 0) {
+          return null;
+        }
+        
+        if (name.length > 100) {
+          return name.substring(0, 100);
+        }
+
+        // Sanitizar caracteres peligrosos
+        const sanitized = name.replace(/[<>\"\']/g, '');
+        
+        return sanitized;
+      }
     }
 
     return null;
@@ -243,19 +315,50 @@ export class ChatAssistantService {
   }
 
   private generateDatabaseFromDescription(description: string) {
+    // Validar descripción
+    if (!description || typeof description !== 'string') {
+      return '';
+    }
+
+    const trimmed = description.trim();
+    
+    if (trimmed.length === 0) {
+      return '';
+    }
+
+    if (trimmed.length > 200) {
+      description = trimmed.substring(0, 200);
+    }
+
     // Limpiar el diagrama actual
     this.diagramService.newDiagram();
 
     // Analizar la descripción y generar tablas apropiadas
     const tables = this.inferTablesFromDescription(description);
     
+    // Validar que se generaron tablas
+    if (!tables || tables.length === 0) {
+      return '';
+    }
+
+    // Limitar número de tablas
+    const limitedTables = tables.slice(0, 20);
+    
     let x = 300;
     let y = 200;
     const spacing = 250;
     const createdShapes: Map<string, any> = new Map();
 
+    // Generar código SQL
+    const sqlCode = this.generateSQLFromTables(limitedTables);
+
     // Primero crear todas las formas
-    tables.forEach((table, index) => {
+    limitedTables.forEach((table, index) => {
+      // Validar datos de la tabla
+      if (!table || !table.name || !table.columns) {
+        return;
+      }
+
       const shape = {
         id: `shape-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
         type: 'table',
@@ -276,7 +379,7 @@ export class ChatAssistantService {
     });
 
     // Luego crear todas las conexiones basadas en las FK
-    tables.forEach(table => {
+    limitedTables.forEach(table => {
       const fromShape = createdShapes.get(table.name);
       if (!fromShape) return;
 
@@ -299,6 +402,47 @@ export class ChatAssistantService {
         }
       });
     });
+
+    // Mostrar el código SQL en el modal
+    this.diagramService.setExternalSql(sqlCode);
+    this.diagramService.openSqlGeneratedModal();
+    
+    return sqlCode;
+  }
+
+  private generateSQLFromTables(tables: any[]): string {
+    let sql = '-- Base de datos generada automáticamente\n';
+    sql += '-- Fecha: ' + new Date().toLocaleString() + '\n\n';
+
+    // Primero crear las tablas sin FK
+    tables.forEach(table => {
+      sql += `CREATE TABLE ${table.name} (\n`;
+      
+      const columns = table.columns.map((col: any) => {
+        let colDef = `  ${col.name} ${col.type}`;
+        if (col.pk) {
+          colDef += ' PRIMARY KEY AUTO_INCREMENT';
+        }
+        return colDef;
+      });
+      
+      sql += columns.join(',\n');
+      sql += '\n);\n\n';
+    });
+
+    // Luego agregar las FK como ALTER TABLE
+    tables.forEach(table => {
+      table.columns.forEach((col: any) => {
+        if (col.fk) {
+          sql += `ALTER TABLE ${table.name}\n`;
+          sql += `  ADD CONSTRAINT fk_${table.name}_${col.name}\n`;
+          sql += `  FOREIGN KEY (${col.name})\n`;
+          sql += `  REFERENCES ${col.fk}(id);\n\n`;
+        }
+      });
+    });
+
+    return sql;
   }
 
   private inferTablesFromDescription(description: string): any[] {

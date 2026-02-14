@@ -16,6 +16,7 @@ export class DiagramService {
   
   private externalSql = signal<string | null>(null);
   sqlModalOpen = signal(false);
+  sqlGeneratedModalOpen = signal(false);
   tableModalOpen = signal(false);
   templatesModalOpen = signal(false);
 
@@ -355,6 +356,118 @@ export class DiagramService {
     if (this.externalSql()) return this.externalSql()!;
     // ... lógica de generación normal ...
     return '-- Generando SQL...';
+  }
+
+  setExternalSql(sql: string) {
+    this.externalSql.set(sql);
+  }
+
+  openSqlGeneratedModal() {
+    this.sqlGeneratedModalOpen.set(true);
+  }
+
+  closeSqlGeneratedModal() {
+    this.sqlGeneratedModalOpen.set(false);
+    this.externalSql.set(null);
+  }
+
+  exportAsImage(format: 'png' | 'svg' = 'png') {
+    const svgElement = document.querySelector('.canvas-svg') as SVGElement;
+    if (!svgElement) {
+      alert('No se pudo encontrar el canvas para exportar');
+      return;
+    }
+
+    const shapes = this.shapesList();
+    if (shapes.length === 0) {
+      alert('El diagrama está vacío. Agrega elementos antes de exportar.');
+      return;
+    }
+
+    // Calcular el área ocupada por las formas
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    shapes.forEach(shape => {
+      minX = Math.min(minX, shape.x);
+      minY = Math.min(minY, shape.y);
+      maxX = Math.max(maxX, shape.x + shape.width);
+      maxY = Math.max(maxY, shape.y + shape.height);
+    });
+
+    // Agregar padding
+    const padding = 50;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    // Clonar el SVG
+    const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+    clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+    clonedSvg.setAttribute('width', width.toString());
+    clonedSvg.setAttribute('height', height.toString());
+
+    // Agregar estilos inline
+    const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    styleElement.textContent = `
+      .diagram-shape { cursor: default; }
+      .diagram-shape text { fill: #000; font-family: Arial, sans-serif; font-size: 14px; }
+      .diagram-shape.selected { outline: none; }
+      .connection-line { stroke: #64748b; stroke-width: 2; fill: none; }
+      .table-header { fill: #6366f1; }
+      .table-title { fill: #fff; font-weight: bold; }
+      .table-row { fill: #f8fafc; stroke: #e2e8f0; }
+      .col-text { fill: #334155; font-size: 11px; }
+    `;
+    clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+
+    if (format === 'svg') {
+      // Exportar como SVG
+      const svgData = new XMLSerializer().serializeToString(clonedSvg);
+      const blob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `diagrama-${Date.now()}.svg`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // Exportar como PNG
+      const svgData = new XMLSerializer().serializeToString(clonedSvg);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) return;
+
+      const img = new Image();
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = pngUrl;
+            link.download = `diagrama-${Date.now()}.png`;
+            link.click();
+            URL.revokeObjectURL(pngUrl);
+          }
+        });
+        
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
+    }
   }
 
   openSqlModal() { this.sqlModalOpen.set(true); }
