@@ -2,6 +2,7 @@ import { Component, inject, ViewChild, ElementRef } from '@angular/core';
 import { DiagramService } from '../../services/diagram.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { ThemeService } from '../../services/theme.service';
 import { Router } from '@angular/router';
 import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.component';
 
@@ -85,6 +86,22 @@ import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.compone
         </div>
       }
 
+      <!-- Theme Toggle -->
+      <button 
+        (click)="themeService.toggleTheme()" 
+        class="icon-btn theme-btn" 
+        [title]="themeService.theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+        {{ themeService.theme() === 'dark' ? '☀️' : '🌙' }}
+      </button>
+
+      <!-- Shortcuts Help -->
+      <button 
+        (click)="openShortcutsHelp()" 
+        class="icon-btn help-btn" 
+        title="Atajos de teclado (?)">
+        ⌨️
+      </button>
+
       <!-- Gallery Button -->
       <button (click)="router.navigate(['/gallery'])" class="icon-btn gallery-btn" title="Ver galería">
         🏠
@@ -153,6 +170,29 @@ import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.compone
       background: rgba(239, 68, 68, 0.3);
       color: #ef4444;
     }
+
+    .theme-btn {
+      background: rgba(251, 191, 36, 0.15);
+      color: #f59e0b;
+      font-size: 18px;
+      transition: all 0.3s ease;
+    }
+
+    .theme-btn:hover {
+      background: rgba(251, 191, 36, 0.25);
+      transform: scale(1.1) rotate(20deg);
+    }
+
+    .help-btn {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      font-size: 18px;
+    }
+
+    .help-btn:hover {
+      background: rgba(34, 197, 94, 0.25);
+      transform: scale(1.1);
+    }
     
     .selection-info {
       padding: 6px 12px;
@@ -171,9 +211,15 @@ export class ToolbarComponent {
   router = inject(Router);
   authService = inject(AuthService);
   notifications = inject(NotificationService);
+  themeService = inject(ThemeService);
   
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('assistant') assistant!: ChatAssistantComponent;
+
+  openShortcutsHelp(): void {
+    // Disparar evento personalizado para abrir el modal de atajos
+    window.dispatchEvent(new CustomEvent('open-shortcuts-help'));
+  }
 
   getCurrentUser(): string {
     return this.authService.user()?.username || 'Usuario';

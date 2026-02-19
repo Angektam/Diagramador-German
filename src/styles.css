@@ -1327,3 +1327,205 @@ app-root {
   max-width: 100%;
   max-height: 100%;
 }
+
+/* ============================================
+   TEMA CLARO
+   ============================================ */
+
+body.theme-light {
+  --bg-main: #ffffff;
+  --bg-toolbar: #f8f9fa;
+  --bg-panel: #f8f9fa;
+  --border-color: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.1);
+  --shape-fill: #ffffff;
+  --shape-stroke: #6366f1;
+  --stroke-color: #94a3b8;
+  --grid-dot: #cbd5e1;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+  --scrollbar-track: #f1f5f9;
+}
+
+/* Ajustes específicos para tema claro */
+body.theme-light {
+  background: #f1f5f9;
+}
+
+body.theme-light .toolbar {
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg-toolbar) 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .shapes-panel,
+body.theme-light .format-panel {
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg-panel) 100%);
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .panel-header {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f5f9 100%);
+}
+
+body.theme-light .canvas-wrapper {
+  background: 
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(99, 102, 241, 0.04) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 213, 225, 0.4) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px, 20px 20px;
+  background-color: #ffffff;
+}
+
+body.theme-light .shape-item,
+body.theme-light .scratchpad-item {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-color: var(--border-color);
+}
+
+body.theme-light .shape-item:hover,
+body.theme-light .scratchpad-item:hover {
+  background: var(--accent-light);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+body.theme-light .shape-search,
+body.theme-light .format-section input[type="text"],
+body.theme-light .connect-select,
+body.theme-light .column-row input[type="text"],
+body.theme-light .column-row select {
+  background: #ffffff;
+  border-color: var(--border-color);
+}
+
+body.theme-light .shape-search:focus,
+body.theme-light .format-section input[type="text"]:focus {
+  background: #ffffff;
+  border-color: var(--accent);
+}
+
+body.theme-light .modal,
+body.theme-light .modal-content {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+body.theme-light .modal-header {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f5f9 100%);
+}
+
+body.theme-light .modal-footer {
+  background: #f8f9fa;
+}
+
+body.theme-light .modal-sql .modal-body textarea {
+  background: #ffffff;
+  border-color: var(--border-color);
+}
+
+body.theme-light .column-row {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+body.theme-light .zoom-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--border-color);
+}
+
+body.theme-light .format-content .hint {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Scrollbars tema claro */
+body.theme-light::-webkit-scrollbar-track,
+body.theme-light .canvas-wrapper::-webkit-scrollbar-track,
+body.theme-light .shapes-panel::-webkit-scrollbar-track,
+body.theme-light .format-panel::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body.theme-light::-webkit-scrollbar-thumb,
+body.theme-light .canvas-wrapper::-webkit-scrollbar-thumb,
+body.theme-light .shapes-panel::-webkit-scrollbar-thumb,
+body.theme-light .format-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  border-color: #f1f5f9;
+}
+
+body.theme-light::-webkit-scrollbar-thumb:hover,
+body.theme-light .canvas-wrapper::-webkit-scrollbar-thumb:hover,
+body.theme-light .shapes-panel::-webkit-scrollbar-thumb:hover,
+body.theme-light .format-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+body.theme-light .canvas-wrapper::-webkit-scrollbar-button {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+body.theme-light .canvas-wrapper::-webkit-scrollbar-button:hover {
+  background: #cbd5e1;
+}
+
+/* Textos en formas - tema claro */
+body.theme-light .diagram-shape text {
+  fill: #1e293b;
+}
+
+body.theme-light .diagram-shape.table-shape .table-row {
+  fill: #ffffff;
+  stroke: var(--border-color);
+}
+
+body.theme-light .diagram-shape.table-shape .table-row:nth-child(even) {
+  fill: #f8f9fa;
+}
+
+body.theme-light .diagram-shape.table-shape text.col-text {
+  fill: #1e293b;
+}
+
+/* Scratchpad tema claro */
+body.theme-light .scratchpad-section {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f5f9 100%);
+}
+
+body.theme-light .scratchpad-area {
+  background: #ffffff;
+}
+
+body.theme-light .scratchpad-empty {
+  background: rgba(99, 102, 241, 0.03);
+  border-color: var(--border-color);
+}
+
+/* Botones tema claro */
+body.theme-light .btn-secondary {
+  background: #ffffff;
+  border-color: var(--border-color);
+}
+
+body.theme-light .btn-secondary:hover {
+  background: var(--accent-light);
+}
+
+/* Animación suave de transición de tema */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.toolbar,
+.shapes-panel,
+.format-panel,
+.canvas-wrapper,
+.modal,
+.modal-content {
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
