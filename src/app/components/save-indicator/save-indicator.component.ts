@@ -163,11 +163,11 @@ export class SaveIndicatorComponent {
   constructor() {
     // Observar cambios en el diagrama
     effect(() => {
-      const shapes = this.diagram.shapes();
-      const connections = this.diagram.connections();
+      const shapes = this.diagram.shapesList();
+      const connections = this.diagram.connectionsList();
       
       // Si hay cambios, marcar como sin guardar
-      if (shapes.length !== this.previousShapesCount) {
+      if (shapes.length !== this.previousShapesCount || connections.length > 0) {
         this.previousShapesCount = shapes.length;
         this.markAsUnsaved();
       }

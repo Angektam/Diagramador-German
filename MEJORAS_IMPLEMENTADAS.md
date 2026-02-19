@@ -47,7 +47,32 @@ Presiona `?` o haz clic en el botón ⌨️ para ver todos los atajos.
 
 ---
 
-## 3. 📁 Reorganización del Proyecto
+## 3. 💾 Indicador de Estado de Guardado
+
+### Características:
+- Indicador visual en tiempo real
+- 3 estados: Guardado ✓, Guardando ⟳, Sin guardar ●
+- Auto-guardado después de 2 segundos de inactividad
+- Timestamp del último guardado
+- Formato inteligente ("Hace 5 min")
+- Animaciones suaves (spinner, pulse)
+- Adaptado a ambos temas
+
+### Estados:
+- **Verde** - Todo guardado
+- **Amarillo** - Guardando...
+- **Rojo** - Cambios sin guardar
+
+### Archivos:
+- `src/app/components/save-indicator/save-indicator.component.ts` - Componente indicador
+- `src/app/components/toolbar/toolbar.component.ts` - Integración
+
+### Uso:
+Funciona automáticamente. Observa el indicador en el toolbar para saber el estado.
+
+---
+
+## 4. 📁 Reorganización del Proyecto
 
 ### Estructura Nueva:
 ```
@@ -77,6 +102,7 @@ Toda la documentación está en `/docs`:
 - `GUIA_DESARROLLO.md` - Guía para desarrolladores
 - `MEJORA_TEMA_CLARO_OSCURO.md` - Detalles del sistema de temas
 - `MEJORA_ATAJOS_TECLADO.md` - Detalles de atajos
+- `MEJORA_INDICADOR_GUARDADO.md` - Detalles del indicador
 - `REORGANIZACION_COMPLETADA.md` - Resumen de reorganización
 
 ---
@@ -95,12 +121,15 @@ npm run dev
 - [ ] Conectar frontend con backend
 - [ ] Base de datos PostgreSQL
 - [ ] Autenticación JWT
+- [ ] Guardado real en servidor
 - [ ] Copiar/Pegar funcional
 - [ ] Deshacer/Rehacer
 - [ ] Más plantillas de diagramas
 - [ ] Colaboración en tiempo real
+- [ ] Historial de versiones
 
 ---
 
 **Fecha**: Febrero 2026  
-**Estado**: ✅ Todas las mejoras completadas y funcionales
+**Estado**: ✅ Todas las mejoras completadas y funcionales  
+**Total de mejoras**: 4 implementadas
