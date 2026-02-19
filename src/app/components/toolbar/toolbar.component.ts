@@ -5,11 +5,12 @@ import { NotificationService } from '../../services/notification.service';
 import { ThemeService } from '../../services/theme.service';
 import { Router } from '@angular/router';
 import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.component';
+import { SaveIndicatorComponent } from '../save-indicator/save-indicator.component';
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [ChatAssistantComponent],
+  imports: [ChatAssistantComponent, SaveIndicatorComponent],
   template: `
     <header class="toolbar">
       <!-- Menu Bar -->
@@ -78,6 +79,9 @@ import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.compone
 
       <!-- Spacer -->
       <div style="flex: 1;"></div>
+      
+      <!-- Save Indicator -->
+      <app-save-indicator />
       
       <!-- Selection Info -->
       @if (diagram.selectedShapeIds().length > 0) {
