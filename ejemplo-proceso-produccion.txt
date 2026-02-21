@@ -1,0 +1,153 @@
+Proceso de Producción - Fábrica de Calzado Deportivo
+
+Empresa: Deportes XYZ S.A.
+Departamento: Producción
+Fecha: Febrero 2026
+
+=== DESCRIPCIÓN GENERAL ===
+
+Este documento describe el proceso completo de fabricación de calzado deportivo, desde la recepción de materiales hasta el producto terminado listo para distribución.
+
+=== PROCESO PRINCIPAL DE PRODUCCIÓN ===
+
+1. Recepción de Materia Prima
+   - Llegada de materiales (cuero, tela, suelas, cordones)
+   - Verificación de orden de compra
+   - Inspección visual de calidad
+   - Registro en sistema de inventario
+   - Almacenamiento en bodega
+
+2. Control de Calidad de Materiales
+   - Pruebas de resistencia del material
+   - Verificación de colores y texturas
+   - Medición de espesores
+   - Aprobación o rechazo de lotes
+   - Documentación de resultados
+
+3. Diseño y Patronaje
+   - Selección del modelo a producir
+   - Creación de patrones según tallas
+   - Marcado de piezas en material
+   - Optimización de corte para minimizar desperdicio
+
+4. Corte de Piezas
+   - Corte automatizado de piezas principales
+   - Corte manual de detalles
+   - Numeración de piezas
+   - Agrupación por modelo y talla
+   - Control de cantidad
+
+5. Preparación de Componentes
+   - Perforado para cordones
+   - Aplicación de refuerzos
+   - Preparación de plantillas
+   - Organización de herrajes y accesorios
+
+6. Costura y Ensamblaje Superior
+   - Costura de piezas del upper (parte superior)
+   - Instalación de ojales
+   - Colocación de etiquetas
+   - Revisión de costuras
+   - Control de calidad intermedio
+
+7. Montaje en Horma
+   - Colocación del upper en horma
+   - Ajuste y tensado
+   - Fijación temporal
+   - Conformado del calzado
+
+8. Pegado de Suelas
+   - Preparación de superficies
+   - Aplicación de adhesivo
+   - Prensado de suela
+   - Tiempo de secado (24 horas)
+   - Verificación de adherencia
+
+9. Acabados y Detalles
+   - Limpieza de excesos de pegamento
+   - Pulido de superficies
+   - Instalación de plantillas interiores
+   - Colocación de cordones
+   - Aplicación de protectores
+
+10. Control de Calidad Final
+    - Inspección visual completa
+    - Prueba de flexibilidad
+    - Verificación de medidas
+    - Prueba de resistencia
+    - Clasificación (primera, segunda, rechazo)
+
+11. Empaquetado
+    - Limpieza final del producto
+    - Colocación de papel de seda
+    - Empaque en caja individual
+    - Etiquetado con código de barras
+    - Sellado de caja
+
+12. Almacenamiento y Distribución
+    - Registro en sistema de inventario
+    - Almacenamiento en bodega de producto terminado
+    - Organización por modelo y talla
+    - Preparación de pedidos
+    - Despacho a clientes
+
+=== PROCESOS DE SOPORTE ===
+
+Mantenimiento de Maquinaria:
+- Inspección diaria de equipos
+- Lubricación semanal
+- Calibración mensual
+- Reparaciones según necesidad
+
+Gestión de Calidad:
+- Auditorías semanales
+- Análisis de defectos
+- Acciones correctivas
+- Capacitación continua
+
+Control de Inventario:
+- Conteo diario de materiales
+- Reorden de insumos
+- Gestión de mermas
+- Optimización de stock
+
+=== INDICADORES DE PRODUCCIÓN ===
+
+- Capacidad: 500 pares por día
+- Tiempo de ciclo: 48 horas por lote
+- Tasa de defectos objetivo: < 2%
+- Eficiencia esperada: > 85%
+- Tiempo de entrega: 5-7 días
+
+=== RECURSOS NECESARIOS ===
+
+Personal:
+- 10 operarios de corte
+- 15 costureras
+- 8 operarios de montaje
+- 5 inspectores de calidad
+- 3 empacadores
+
+Maquinaria:
+- Cortadora automática CNC
+- Máquinas de coser industriales
+- Prensas neumáticas
+- Hornos de secado
+- Equipos de control de calidad
+
+=== PUNTOS CRÍTICOS DE CONTROL ===
+
+1. Control de calidad de materia prima (evita defectos posteriores)
+2. Precisión en el corte (minimiza desperdicios)
+3. Calidad de costuras (afecta durabilidad)
+4. Adherencia de suelas (punto crítico de falla)
+5. Inspección final (última oportunidad de detectar defectos)
+
+=== MEJORAS CONTINUAS ===
+
+Proyectos en curso:
+- Automatización del proceso de corte
+- Implementación de sistema de trazabilidad
+- Reducción de tiempos de secado
+- Capacitación en nuevas técnicas
+- Optimización de layout de planta

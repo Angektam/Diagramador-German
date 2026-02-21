@@ -15,6 +15,7 @@ export class ChatAssistantService {
   private commands = {
     createTable: ['crear tabla', 'nueva tabla', 'agregar tabla', 'add table'],
     importSql: ['importar sql', 'cargar sql', 'import sql', 'pegar sql'],
+    loadDocument: ['cargar documento', 'importar documento', 'subir documento', 'cargar entrevista', 'cargar proceso'],
     newDiagram: ['nuevo diagrama', 'limpiar todo', 'borrar todo', 'empezar de nuevo'],
     save: ['guardar', 'save', 'guardar diagrama'],
     zoom: ['zoom', 'acercar', 'alejar'],
@@ -85,6 +86,16 @@ export class ChatAssistantService {
           action: () => this.diagramService.openSqlModal()
         };
 
+      case 'loadDocument':
+        return {
+          message: 'Abriendo el cargador de documentos. Puedes cargar entrevistas, procesos de producción, requisitos, etc.',
+          suggestions: ['Ver comandos', 'Ayuda', 'Estadísticas'],
+          action: () => {
+            // Disparar evento para abrir el modal de documentos
+            window.dispatchEvent(new CustomEvent('open-document-uploader'));
+          }
+        };
+
       case 'newDiagram':
         return {
           message: 'He creado un nuevo diagrama vacío. ¿Qué quieres hacer ahora?',
@@ -111,12 +122,13 @@ export class ChatAssistantService {
           message: `🧙‍♂️ Puedo ayudarte con:\n\n` +
             `🎨 Crear y editar tablas de bases de datos\n` +
             `📥 Importar código SQL (CREATE TABLE)\n` +
+            `📄 Cargar documentos (entrevistas, procesos, requisitos)\n` +
             `💾 Guardar y cargar diagramas\n` +
             `🔍 Ajustar zoom y vista del canvas\n` +
             `📊 Ver estadísticas del diagrama\n` +
             `🎯 Usar plantillas predefinidas\n\n` +
             `Escribe "comandos" para ver ejemplos específicos.`,
-          suggestions: ['Ver comandos', 'Crear tabla', 'Importar SQL']
+          suggestions: ['Ver comandos', 'Cargar documento', 'Importar SQL']
         };
 
       case 'commands':
@@ -124,6 +136,7 @@ export class ChatAssistantService {
           message: `📋 Comandos disponibles:\n\n` +
             `• "Crear tabla" - Abre el modal para crear una tabla\n` +
             `• "Importar SQL" - Abre el editor SQL\n` +
+            `• "Cargar documento" - Importa entrevistas, procesos, etc.\n` +
             `• "Crea una base de datos de..." - Te guío para crear una BD\n` +
             `• "Usar Wizard" - Abre el asistente guiado\n` +
             `• "Nuevo diagrama" - Crea un diagrama vacío\n` +
@@ -132,7 +145,7 @@ export class ChatAssistantService {
             `• "Estadísticas" - Muestra info del diagrama\n` +
             `• "Plantillas" - Abre plantillas predefinidas\n` +
             `• "Ayuda" - Muestra esta ayuda`,
-          suggestions: ['Crear tabla', 'Usar Wizard', 'Estadísticas']
+          suggestions: ['Cargar documento', 'Usar Wizard', 'Estadísticas']
         };
 
       case 'templates':

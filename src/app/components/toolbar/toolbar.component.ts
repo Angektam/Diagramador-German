@@ -6,11 +6,12 @@ import { ThemeService } from '../../services/theme.service';
 import { Router } from '@angular/router';
 import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.component';
 import { SaveIndicatorComponent } from '../save-indicator/save-indicator.component';
+import { DocumentUploaderComponent } from '../document-uploader/document-uploader.component';
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [ChatAssistantComponent, SaveIndicatorComponent],
+  imports: [ChatAssistantComponent, SaveIndicatorComponent, DocumentUploaderComponent],
   template: `
     <header class="toolbar">
       <!-- Menu Bar -->
@@ -31,6 +32,9 @@ import { SaveIndicatorComponent } from '../save-indicator/save-indicator.compone
         </button>
         <button (click)="assistant.open()" class="icon-btn assistant-btn" title="Asistente de diagramas">
           🧙‍♂️
+        </button>
+        <button (click)="documentUploader.open()" class="icon-btn document-btn" title="Cargar documento">
+          📄
         </button>
         <button (click)="diagram.openTemplatesModal()" class="icon-btn templates-btn" title="Plantillas">
           📋
@@ -116,6 +120,9 @@ import { SaveIndicatorComponent } from '../save-indicator/save-indicator.compone
     
     <!-- Assistant Modal -->
     <app-chat-assistant #assistant></app-chat-assistant>
+    
+    <!-- Document Uploader Modal -->
+    <app-document-uploader #documentUploader></app-document-uploader>
   `,
   styles: [`
     .sql-btn {
@@ -197,6 +204,17 @@ import { SaveIndicatorComponent } from '../save-indicator/save-indicator.compone
       background: rgba(34, 197, 94, 0.25);
       transform: scale(1.1);
     }
+
+    .document-btn {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      font-size: 18px;
+    }
+
+    .document-btn:hover {
+      background: rgba(59, 130, 246, 0.25);
+      transform: scale(1.1);
+    }
     
     .selection-info {
       padding: 6px 12px;
@@ -219,6 +237,16 @@ export class ToolbarComponent {
   
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('assistant') assistant!: ChatAssistantComponent;
+  @ViewChild('documentUploader') documentUploader!: DocumentUploaderComponent;
+
+  ngOnInit() {
+    // Escuchar evento para abrir el modal de documentos
+    window.addEventListener('open-document-uploader', () => {
+      if (this.documentUploader) {
+        this.documentUploader.open();
+      }
+    });
+  }
 
   openShortcutsHelp(): void {
     // Disparar evento personalizado para abrir el modal de atajos

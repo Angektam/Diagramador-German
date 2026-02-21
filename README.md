@@ -54,17 +54,23 @@ Toda la documentación está en la carpeta `docs/`:
 - 👉 **[DOCUMENTACION_COMPLETA.md](./docs/DOCUMENTACION_COMPLETA.md)** - Guía completa de uso
 - 📐 **[ARQUITECTURA_REORGANIZACION.md](./docs/ARQUITECTURA_REORGANIZACION.md)** - Arquitectura del sistema
 - ✨ **[MEJORAS_SUGERIDAS.md](./docs/MEJORAS_SUGERIDAS.md)** - Roadmap y mejoras
+- 📄 **[CARGA_DOCUMENTOS.md](./docs/CARGA_DOCUMENTOS.md)** - Guía de carga de documentos
 
 ### Documentación por módulo
 - Frontend: [frontend/README.md](./README.md) (este archivo)
 - Backend: [backend/README.md](./backend/README.md)
 - Shared: [shared/README.md](./shared/README.md)
 
+### Archivos de Ejemplo
+- 🎤 **[ejemplo-entrevista.txt](./ejemplo-entrevista.txt)** - Ejemplo de entrevista con cliente
+- ⚙️ **[ejemplo-proceso-produccion.txt](./ejemplo-proceso-produccion.txt)** - Ejemplo de proceso de producción
+
 ## ✨ Características Destacadas
 
 - 🎨 **Canvas ilimitado** (10000x10000px) con scrollbars
 - 🗺️ **Minimapa interactivo** arrastrable
 - 📥 **Importación SQL** con detección automática de relaciones
+- 📄 **Carga de documentos** (entrevistas, procesos, requisitos) con generación automática
 - 🧙‍♂️ **Asistente inteligente** con generación automática de BD
 - 📋 **Copiar/Pegar** con multi-selección (Ctrl+C/V/D)
 - 🔍 **Zoom** 25-200% con Ctrl+Wheel

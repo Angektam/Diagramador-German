@@ -1,0 +1,73 @@
+Entrevista con el Cliente - Sistema de Gestión de Biblioteca
+
+Fecha: 20 de Febrero de 2026
+Entrevistador: Analista de Sistemas
+Entrevistado: Director de la Biblioteca Municipal
+
+=== CONTEXTO ===
+
+P: ¿Cuál es el objetivo principal del sistema?
+R: Necesitamos un sistema para gestionar el préstamo de libros, controlar el inventario y llevar un registro de nuestros usuarios. Actualmente todo es manual y queremos digitalizarlo.
+
+=== ENTIDADES PRINCIPALES ===
+
+P: ¿Qué información necesitan almacenar sobre los libros?
+R: De cada libro necesitamos el título, autor, ISBN, editorial, año de publicación, categoría y número de copias disponibles. También es importante saber en qué estante está ubicado.
+
+P: ¿Y sobre los usuarios?
+R: Los usuarios son nuestros socios de la biblioteca. Necesitamos su nombre completo, número de documento, dirección, teléfono, email y fecha de inscripción. También queremos saber si tienen multas pendientes.
+
+P: ¿Qué otros elementos participan en el sistema?
+R: Tenemos empleados que gestionan los préstamos. De ellos necesitamos nombre, cargo, turno de trabajo y credenciales de acceso al sistema.
+
+=== PROCESOS ===
+
+P: ¿Cómo funciona el proceso de préstamo?
+R: El proceso es el siguiente:
+1. El usuario solicita un libro
+2. El empleado verifica la disponibilidad
+3. Se registra el préstamo con fecha de salida y fecha de devolución esperada
+4. Se actualiza el stock de libros disponibles
+5. Se entrega el libro al usuario
+
+P: ¿Y el proceso de devolución?
+R: Para la devolución:
+1. El usuario devuelve el libro
+2. El empleado verifica el estado del libro
+3. Se registra la fecha de devolución real
+4. Si hay retraso, se calcula la multa
+5. Se actualiza el stock de libros disponibles
+
+=== RELACIONES ===
+
+P: ¿Cómo se relacionan estos elementos?
+R: Un usuario puede tener múltiples préstamos activos, pero con un límite de 3 libros simultáneos. Cada préstamo está asociado a un libro específico y es gestionado por un empleado. Los libros pertenecen a categorías, y una categoría puede tener muchos libros.
+
+P: ¿Hay algo más sobre las relaciones?
+R: Sí, los usuarios pueden tener multas. Una multa está vinculada a un préstamo específico cuando hay retraso en la devolución. Las multas deben ser pagadas antes de poder hacer nuevos préstamos.
+
+=== REGLAS DE NEGOCIO ===
+
+P: ¿Cuáles son las reglas importantes?
+R: 
+- El período de préstamo es de 15 días
+- La multa por día de retraso es de $50
+- Un usuario no puede hacer préstamos si tiene multas pendientes
+- Máximo 3 libros por usuario simultáneamente
+- Los libros de referencia no se pueden prestar, solo consultar en sala
+
+=== REPORTES NECESARIOS ===
+
+P: ¿Qué reportes necesitan?
+R: Necesitamos reportes de:
+- Libros más prestados
+- Usuarios con más préstamos
+- Multas pendientes de cobro
+- Libros próximos a vencer
+- Inventario de libros por categoría
+- Estadísticas mensuales de préstamos
+
+=== OBSERVACIONES FINALES ===
+
+P: ¿Algo más que debamos considerar?
+R: Sería ideal poder enviar recordatorios por email a los usuarios cuando se acerca la fecha de devolución. También queremos poder reservar libros que están prestados, para que cuando se devuelvan, el siguiente usuario en la lista de espera sea notificado.
