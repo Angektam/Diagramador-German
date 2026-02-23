@@ -354,8 +354,62 @@ export class DiagramService {
 
   generateSql() {
     if (this.externalSql()) return this.externalSql()!;
-    // ... lógica de generación normal ...
-    return '-- Generando SQL...';
+    
+    // Generar SQL desde las tablas del diagrama
+    const shapes = this.shapes();
+    const connections = this.connections();
+    
+    if (shapes.length === 0) {
+      return '-- No hay tablas en el diagrama';
+    }
+    
+    let sql = '-- SQL generado automáticamente\n';
+    sql += '-- Fecha: ' + new Date().toLocaleString() + '\n\n';
+    
+    // Filtrar solo las tablas
+    const tables = shapes.filter(s => s.type === 'table' && s.tableData);
+    
+    if (tables.length === 0) {
+      return '-- No hay tablas en el diagrama';
+    }
+    
+    // Generar CREATE TABLE para cada tabla
+    tables.forEach(table => {
+      const tableName = table.tableData!.name;
+      const columns = table.tableData!.columns || [];
+      
+      sql += `CREATE TABLE ${tableName} (\n`;
+      
+      const columnDefs = columns.map((col, index) => {
+        let colDef = `  ${col.name} ${col.type}`;
+        if (col.pk) {
+          colDef += ' PRIMARY KEY AUTO_INCREMENT';
+        }
+        return colDef;
+      });
+      
+      sql += columnDefs.join(',\n');
+      sql += '\n);\n\n';
+    });
+    
+    // Agregar ALTER TABLE para foreign keys basadas en conexiones
+    connections.forEach(conn => {
+      const fromShape = shapes.find(s => s.id === conn.fromId);
+      const toShape = shapes.find(s => s.id === conn.toId);
+      
+      if (fromShape?.tableData && toShape?.tableData) {
+        const fromTable = fromShape.tableData.name;
+        const toTable = toShape.tableData.name;
+        const fkColumn = toTable.toLowerCase() + '_id';
+        
+        sql += `ALTER TABLE ${fromTable}\n`;
+        sql += `  ADD CONSTRAINT fk_${fromTable}_${toTable}\n`;
+        sql += `  FOREIGN KEY (${fkColumn})\n`;
+        sql += `  REFERENCES ${toTable}(id);\n\n`;
+      }
+    });
+    
+    return sql;
   }
 
   setExternalSql(sql: string) {
