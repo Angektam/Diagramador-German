@@ -1,13 +1,15 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, inject, HostListener, signal } from '@angular/core';
 import { DiagramService } from '../../services/diagram.service';
 import { NotificationService } from '../../services/notification.service';
+import { ContextMenuService } from '../../services/context-menu.service';
 import { DiagramShape } from '../../models/diagram.model';
 import { CommonModule } from '@angular/common';
+import { ContextMenuComponent } from '../context-menu/context-menu.component';
 
 @Component({
   selector: 'app-canvas',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ContextMenuComponent],
   template: `
     <main class="canvas-wrapper" #wrapperRef 
           (drop)="onDrop($event)" 
@@ -453,6 +455,7 @@ import { CommonModule } from '@angular/common';
         </svg>
       </div>
     </main>
+    <app-context-menu #contextMenuRef></app-context-menu>
   `,
   styles: [`
     .alignment-guide {
@@ -533,9 +536,11 @@ export class CanvasComponent implements AfterViewInit {
   @ViewChild('containerRef') containerRef!: ElementRef<HTMLElement>;
   @ViewChild('svgRef') svgRef!: ElementRef<SVGSVGElement>;
   @ViewChild('minimapRef') minimapRef!: ElementRef<HTMLElement>;
+  @ViewChild('contextMenuRef') contextMenuRef!: any;
 
   diagram = inject(DiagramService);
   private notifications = inject(NotificationService);
+  private contextMenuService = inject(ContextMenuService);
   private dragStart = { mouseX: 0, mouseY: 0, shapeX: 0, shapeY: 0 };
   
   // Snap to grid
@@ -574,6 +579,9 @@ export class CanvasComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.drawGrid();
     this.updateMinimapViewport();
+    
+    // Registrar el menú contextual
+    this.contextMenuService.setMenuRef(this.contextMenuRef);
     
     // Centrar el canvas al inicio
     const wrapper = this.wrapperRef.nativeElement;
@@ -1047,10 +1055,150 @@ export class CanvasComponent implements AfterViewInit {
   
   // Prevenir menú contextual para permitir panning con click derecho
   onContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    
     const target = event.target as Element;
-    // Solo prevenir si no es una forma (para permitir panning en canvas vacío)
-    if (!target.closest('.diagram-shape')) {
-      event.preventDefault();
+    const shapeElement = target.closest('.diagram-shape');
+    
+    if (shapeElement) {
+      // Click derecho en una forma
+      const shapeId = this.getShapeIdFromElement(shapeElement);
+      if (shapeId) {
+        const hasSelection = this.diagram.selectedShapeIds().length > 1;
+        this.contextMenuService.showShapeMenu(
+          event.clientX,
+          event.clientY,
+          shapeId,
+          hasSelection,
+          (action, id) => this.handleShapeAction(action, id)
+        );
+      }
+    } else {
+      // Click derecho en el canvas vacío
+      this.contextMenuService.showCanvasMenu(
+        event.clientX,
+        event.clientY,
+        (action) => this.handleCanvasAction(action)
+      );
+    }
+  }
+
+  private getShapeIdFromElement(element: Element): string | null {
+    const shapes = this.diagram.shapesList();
+    const index = Array.from(element.parentElement?.children || []).indexOf(element);
+    return shapes[index]?.id || null;
+  }
+
+  private handleShapeAction(action: string, shapeId: string): void {
+    switch (action) {
+      case 'edit':
+        // Abrir modal de edición (implementar según necesidad)
+        this.notifications.info('Función de edición en desarrollo');
+        break;
+      case 'duplicate':
+        this.duplicateShape(shapeId);
+        break;
+      case 'copy':
+        this.copyShape(shapeId);
+        break;
+      case 'cut':
+        this.cutShape(shapeId);
+        break;
+      case 'delete':
+        this.diagram.removeShape(shapeId);
+        this.notifications.success('Forma eliminada');
+        break;
+      case 'bringToFront':
+        this.bringToFront(shapeId);
+        break;
+      case 'sendToBack':
+        this.sendToBack(shapeId);
+        break;
+      case 'changeColor':
+        this.notifications.info('Función de cambio de color en desarrollo');
+        break;
+      case 'align':
+        this.notifications.info('Función de alineación en desarrollo');
+        break;
+    }
+  }
+
+  private handleCanvasAction(action: string): void {
+    switch (action) {
+      case 'paste':
+        this.pasteShapes();
+        break;
+      case 'zoomIn':
+        this.diagram.setZoom(this.diagram.zoomLevel() + 10);
+        break;
+      case 'zoomOut':
+        this.diagram.setZoom(this.diagram.zoomLevel() - 10);
+        break;
+      case 'zoomReset':
+        this.diagram.setZoom(100);
+        break;
+      case 'selectAll':
+        this.diagram.selectAllShapes();
+        break;
+      case 'clearCanvas':
+        if (confirm('¿Estás seguro de que quieres limpiar el canvas?')) {
+          this.diagram.newDiagram();
+          this.notifications.success('Canvas limpiado');
+        }
+        break;
+    }
+  }
+
+  private duplicateShape(shapeId: string): void {
+    const shape = this.diagram.shapesList().find(s => s.id === shapeId);
+    if (shape) {
+      const newShape = {
+        ...shape,
+        id: crypto.randomUUID(),
+        x: shape.x + 20,
+        y: shape.y + 20
+      };
+      this.diagram.addShape(newShape);
+      this.notifications.success('Forma duplicada');
+    }
+  }
+
+  private copyShape(shapeId: string): void {
+    const shape = this.diagram.shapesList().find(s => s.id === shapeId);
+    if (shape) {
+      this.clipboard = [shape];
+      this.notifications.success('Forma copiada');
+    }
+  }
+
+  private cutShape(shapeId: string): void {
+    const shape = this.diagram.shapesList().find(s => s.id === shapeId);
+    if (shape) {
+      this.clipboard = [shape];
+      this.diagram.removeShape(shapeId);
+      this.notifications.success('Forma cortada');
+    }
+  }
+
+  private bringToFront(shapeId: string): void {
+    const shapes = this.diagram.shapesList();
+    const index = shapes.findIndex(s => s.id === shapeId);
+    if (index !== -1 && index < shapes.length - 1) {
+      const shape = shapes[index];
+      shapes.splice(index, 1);
+      shapes.push(shape);
+      this.notifications.success('Forma traída al frente');
+    }
+  }
+
+  private sendToBack(shapeId: string): void {
+    const shapes = this.diagram.shapesList();
+    const index = shapes.findIndex(s => s.id === shapeId);
+    if (index !== -1 && index > 0) {
+      const shape = shapes[index];
+      shapes.splice(index, 1);
+      shapes.unshift(shape);
+      this.notifications.success('Forma enviada atrás');
     }
   }
 

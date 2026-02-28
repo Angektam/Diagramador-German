@@ -1,4 +1,5 @@
-import { Component, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { DiagramService } from '../../services/diagram.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -11,16 +12,170 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [ChatAssistantComponent, SaveIndicatorComponent, DocumentUploaderComponent],
+  imports: [CommonModule, ChatAssistantComponent, SaveIndicatorComponent, DocumentUploaderComponent],
   template: `
     <header class="toolbar">
       <!-- Menu Bar -->
       <div class="menu-bar">
-        <button class="menu-btn">Archivo</button>
-        <button class="menu-btn">Editar</button>
-        <button class="menu-btn">Ver</button>
-        <button class="menu-btn">Diseño</button>
-        <button class="menu-btn">Ayuda</button>
+        <div class="menu-item">
+          <button class="menu-btn" (click)="toggleMenu('archivo')">Archivo</button>
+          <div class="dropdown-menu" *ngIf="activeMenu() === 'archivo'" (click)="closeMenu()">
+            <button class="dropdown-item" (click)="onNew()">
+              <span class="item-icon">📄</span>
+              <span class="item-label">Nuevo</span>
+              <span class="item-shortcut">Ctrl+N</span>
+            </button>
+            <button class="dropdown-item" (click)="onFileClick()">
+              <span class="item-icon">📂</span>
+              <span class="item-label">Abrir...</span>
+              <span class="item-shortcut">Ctrl+O</span>
+            </button>
+            <button class="dropdown-item" (click)="onSaveToGallery()">
+              <span class="item-icon">💾</span>
+              <span class="item-label">Guardar en galería</span>
+              <span class="item-shortcut">Ctrl+S</span>
+            </button>
+            <button class="dropdown-item" (click)="onSaveLocal()">
+              <span class="item-icon">📥</span>
+              <span class="item-label">Descargar JSON</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="exportAsImage()">
+              <span class="item-icon">📸</span>
+              <span class="item-label">Exportar imagen</span>
+              <span class="item-shortcut">Ctrl+E</span>
+            </button>
+            <button class="dropdown-item" (click)="diagram.openSqlModal()">
+              <span class="item-icon">💾</span>
+              <span class="item-label">Importar SQL</span>
+            </button>
+            <button class="dropdown-item" (click)="diagram.openSqlGeneratedModal()">
+              <span class="item-icon">📝</span>
+              <span class="item-label">Generar SQL</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="router.navigate(['/gallery'])">
+              <span class="item-icon">🏠</span>
+              <span class="item-label">Ir a galería</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="menu-item">
+          <button class="menu-btn" (click)="toggleMenu('editar')">Editar</button>
+          <div class="dropdown-menu" *ngIf="activeMenu() === 'editar'" (click)="closeMenu()">
+            <button class="dropdown-item" disabled>
+              <span class="item-icon">↶</span>
+              <span class="item-label">Deshacer</span>
+              <span class="item-shortcut">Ctrl+Z</span>
+            </button>
+            <button class="dropdown-item" disabled>
+              <span class="item-icon">↷</span>
+              <span class="item-label">Rehacer</span>
+              <span class="item-shortcut">Ctrl+Y</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="copySelected()">
+              <span class="item-icon">📄</span>
+              <span class="item-label">Copiar</span>
+              <span class="item-shortcut">Ctrl+C</span>
+            </button>
+            <button class="dropdown-item" (click)="cutSelected()">
+              <span class="item-icon">✂️</span>
+              <span class="item-label">Cortar</span>
+              <span class="item-shortcut">Ctrl+X</span>
+            </button>
+            <button class="dropdown-item" disabled>
+              <span class="item-icon">📋</span>
+              <span class="item-label">Pegar</span>
+              <span class="item-shortcut">Ctrl+V</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="diagram.selectAllShapes()">
+              <span class="item-icon">✅</span>
+              <span class="item-label">Seleccionar todo</span>
+              <span class="item-shortcut">Ctrl+A</span>
+            </button>
+            <button class="dropdown-item" (click)="diagram.deleteSelectedShapes()">
+              <span class="item-icon">🗑️</span>
+              <span class="item-label">Eliminar</span>
+              <span class="item-shortcut">Del</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="menu-item">
+          <button class="menu-btn" (click)="toggleMenu('ver')">Ver</button>
+          <div class="dropdown-menu" *ngIf="activeMenu() === 'ver'" (click)="closeMenu()">
+            <button class="dropdown-item" (click)="diagram.setZoom(diagram.zoomLevel() + 10)">
+              <span class="item-icon">🔍</span>
+              <span class="item-label">Acercar</span>
+              <span class="item-shortcut">Ctrl++</span>
+            </button>
+            <button class="dropdown-item" (click)="diagram.setZoom(diagram.zoomLevel() - 10)">
+              <span class="item-icon">🔍</span>
+              <span class="item-label">Alejar</span>
+              <span class="item-shortcut">Ctrl+-</span>
+            </button>
+            <button class="dropdown-item" (click)="diagram.setZoom(100)">
+              <span class="item-icon">⊙</span>
+              <span class="item-label">Zoom 100%</span>
+              <span class="item-shortcut">Ctrl+0</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="themeService.toggleTheme()">
+              <span class="item-icon">{{ themeService.theme() === 'dark' ? '☀️' : '🌙' }}</span>
+              <span class="item-label">{{ themeService.theme() === 'dark' ? 'Tema claro' : 'Tema oscuro' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="menu-item">
+          <button class="menu-btn" (click)="toggleMenu('diseño')">Diseño</button>
+          <div class="dropdown-menu" *ngIf="activeMenu() === 'diseño'" (click)="closeMenu()">
+            <button class="dropdown-item" (click)="diagram.openTemplatesModal()">
+              <span class="item-icon">📋</span>
+              <span class="item-label">Plantillas</span>
+            </button>
+            <button class="dropdown-item" (click)="assistant.open()">
+              <span class="item-icon">🧙‍♂️</span>
+              <span class="item-label">Asistente IA</span>
+            </button>
+            <button class="dropdown-item" (click)="documentUploader.open()">
+              <span class="item-icon">📄</span>
+              <span class="item-label">Cargar documento</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" disabled>
+              <span class="item-icon">📐</span>
+              <span class="item-label">Auto-organizar</span>
+            </button>
+            <button class="dropdown-item" disabled>
+              <span class="item-icon">🎨</span>
+              <span class="item-label">Cambiar colores</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="menu-item">
+          <button class="menu-btn" (click)="toggleMenu('ayuda')">Ayuda</button>
+          <div class="dropdown-menu" *ngIf="activeMenu() === 'ayuda'" (click)="closeMenu()">
+            <button class="dropdown-item" (click)="openShortcutsHelp()">
+              <span class="item-icon">⌨️</span>
+              <span class="item-label">Atajos de teclado</span>
+              <span class="item-shortcut">?</span>
+            </button>
+            <button class="dropdown-item" (click)="showAbout()">
+              <span class="item-icon">ℹ️</span>
+              <span class="item-label">Acerca de</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="showTutorial()">
+              <span class="item-icon">📚</span>
+              <span class="item-label">Tutorial</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="separator"></div>
@@ -125,6 +280,197 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
     <app-document-uploader #documentUploader></app-document-uploader>
   `,
   styles: [`
+    .menu-bar {
+      display: flex;
+      gap: 2px;
+      position: relative;
+      padding: 0 8px;
+    }
+
+    .menu-item {
+      position: relative;
+    }
+
+    .menu-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 0.3px;
+    }
+
+    .menu-btn:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--accent);
+    }
+
+    .menu-btn:active {
+      transform: scale(0.96);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 8px;
+      background: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.5),
+        0 10px 10px -5px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      min-width: 260px;
+      padding: 8px;
+      z-index: 10000;
+      animation: menuFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    /* Fondo completamente opaco en modo claro */
+    :host-context(.light-theme) .dropdown-menu {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(0, 0, 0, 0.02);
+    }
+
+    @keyframes menuFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 11px 16px;
+      border: none;
+      background: transparent;
+      color: #e5e7eb;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropdown-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      transform: scaleY(0);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dropdown-item:hover:not(:disabled) {
+      background: rgba(99, 102, 241, 0.12);
+      color: #ffffff;
+      transform: translateX(4px);
+    }
+
+    .dropdown-item:hover:not(:disabled)::before {
+      transform: scaleY(1);
+    }
+
+    .dropdown-item:active:not(:disabled) {
+      transform: translateX(4px) scale(0.98);
+      background: rgba(99, 102, 241, 0.18);
+    }
+
+    .dropdown-item:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      color: #6b7280;
+    }
+
+    /* Items en modo claro */
+    :host-context(.light-theme) .dropdown-item {
+      color: #1f2937;
+    }
+
+    :host-context(.light-theme) .dropdown-item:hover:not(:disabled) {
+      background: rgba(99, 102, 241, 0.08);
+      color: #111827;
+    }
+
+    :host-context(.light-theme) .dropdown-item:active:not(:disabled) {
+      background: rgba(99, 102, 241, 0.12);
+    }
+
+    :host-context(.light-theme) .dropdown-item:disabled {
+      color: #9ca3af;
+    }
+
+    .item-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+      filter: grayscale(0.2);
+      transition: filter 0.2s;
+    }
+
+    .dropdown-item:hover:not(:disabled) .item-icon {
+      filter: grayscale(0);
+    }
+
+    .item-label {
+      flex: 1;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .item-shortcut {
+      font-size: 11px;
+      color: #9ca3af;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    :host-context(.light-theme) .item-shortcut {
+      background: rgba(0, 0, 0, 0.06);
+      color: #6b7280;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      margin: 8px 0;
+    }
+
+    :host-context(.light-theme) .dropdown-divider {
+      background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
+    }
+
     .sql-btn {
       background: var(--accent-light);
       color: var(--accent);
@@ -235,6 +581,8 @@ export class ToolbarComponent {
   notifications = inject(NotificationService);
   themeService = inject(ThemeService);
   
+  activeMenu = signal<string | null>(null);
+  
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('assistant') assistant!: ChatAssistantComponent;
   @ViewChild('documentUploader') documentUploader!: DocumentUploaderComponent;
@@ -246,6 +594,42 @@ export class ToolbarComponent {
         this.documentUploader.open();
       }
     });
+
+    // Cerrar menú al hacer click fuera
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.menu-item')) {
+        this.closeMenu();
+      }
+    });
+  }
+
+  toggleMenu(menu: string): void {
+    if (this.activeMenu() === menu) {
+      this.closeMenu();
+    } else {
+      this.activeMenu.set(menu);
+    }
+  }
+
+  closeMenu(): void {
+    this.activeMenu.set(null);
+  }
+
+  copySelected(): void {
+    this.notifications.info('Función de copiar en desarrollo');
+  }
+
+  cutSelected(): void {
+    this.notifications.info('Función de cortar en desarrollo');
+  }
+
+  showAbout(): void {
+    this.notifications.info('Diagramador SQL v1.1.0 - Febrero 2026');
+  }
+
+  showTutorial(): void {
+    this.notifications.info('Tutorial en desarrollo');
   }
 
   openShortcutsHelp(): void {
