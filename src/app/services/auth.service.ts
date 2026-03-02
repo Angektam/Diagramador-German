@@ -36,13 +36,18 @@ export class AuthService {
 
   login(username: string, password: string): boolean {
     // Usuarios demo - en producción esto sería una llamada al backend
-    const validUsers = [
+    const demoUsers = [
       { id: '1', username: 'admin', password: 'admin123', email: 'admin@diagramador.com' },
       { id: '2', username: 'usuario', password: '123456', email: 'usuario@diagramador.com' },
       { id: '3', username: 'demo', password: 'demo', email: 'demo@diagramador.com' }
     ];
 
-    const user = validUsers.find(u => u.username === username && u.password === password);
+    // Usuarios registrados en localStorage
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+
+    const user = [...demoUsers, ...registeredUsers].find(
+      (u: any) => u.username === username && u.password === password
+    );
     
     if (user) {
       const userData: User = {

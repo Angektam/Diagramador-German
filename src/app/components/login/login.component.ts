@@ -830,7 +830,7 @@ export class LoginComponent {
       
       if (success) {
         this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
-        this.router.navigate(['/editor']);
+        this.router.navigate(['/gallery']);
       } else {
         this.notifications.error('Usuario o contraseña incorrectos');
       }
@@ -892,17 +892,22 @@ export class LoginComponent {
     this.isLoading.set(true);
 
     setTimeout(() => {
+      const username = this.registerData.username.trim();
+      const email = this.registerData.email.trim().toLowerCase();
+      const password = this.registerData.password;
+
       const success = this.authService.register(
-        this.registerData.username.trim(),
-        this.registerData.email.trim().toLowerCase(),
-        this.registerData.password
+        username,
+        email,
+        password
       );
       
       if (success) {
-        this.notifications.success('¡Cuenta creada exitosamente! 🎉');
-        this.isLoginMode.set(true);
-        this.loginData.username = this.registerData.username.trim();
+        // Auto‑login y redirección a la galería
+        this.authService.login(username, password);
+        this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
         this.registerData = { username: '', email: '', password: '' };
+        this.router.navigate(['/gallery']);
       } else {
         this.notifications.error('El usuario ya existe');
       }

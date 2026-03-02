@@ -100,6 +100,10 @@ const SHAPE_DEFS: ShapeDef[] = [
   { shape: 'uml-note', title: 'Nota UML', category: 'uml' },
   { shape: 'uml-state', title: 'Estado', category: 'uml' },
   { shape: 'uml-activity', title: 'Actividad', category: 'uml' },
+  { shape: 'uml-enum', title: 'Enum', category: 'uml' },
+  { shape: 'uml-controller', title: 'Controlador', category: 'uml' },
+  { shape: 'uml-service', title: 'Servicio', category: 'uml' },
+  { shape: 'uml-repository', title: 'Repositorio', category: 'uml' },
 ];
 
 @Component({
@@ -618,6 +622,35 @@ const SHAPE_DEFS: ShapeDef[] = [
                         <rect x="40" y="25" width="40" height="10" fill="#bbf7d0"/>
                       </svg>
                     }
+                    @case ('uml-enum') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#0891b2" stroke-width="2"/>
+                        <text x="60" y="22" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">ENUM</text>
+                      </svg>
+                    }
+                    @case ('uml-controller') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#b91c1c" stroke-width="2"/>
+                        <rect x="35" y="10" width="50" height="12" fill="#fecaca"/>
+                      </svg>
+                    }
+                    @case ('uml-service') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#ecfdf5" stroke="#15803d" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#15803d" stroke-width="2"/>
+                        <rect x="10" y="40" width="60" height="8" fill="#bbf7d0"/>
+                        <rect x="10" y="55" width="50" height="8" fill="#bbf7d0"/>
+                      </svg>
+                    }
+                    @case ('uml-repository') {
+                      <svg viewBox="0 0 120 90" width="56" height="42">
+                        <rect x="2" y="2" width="116" height="86" rx="2" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+                        <line x1="2" y1="30" x2="118" y2="30" stroke="#1d4ed8" stroke-width="2"/>
+                        <rect x="15" y="40" width="90" height="30" fill="#dbeafe"/>
+                      </svg>
+                    }
                     @case ('server') {
                       <svg viewBox="0 0 100 100" width="28" height="28">
                         <rect x="10" y="10" width="80" height="25" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
@@ -819,6 +852,10 @@ export class ShapesPanelComponent {
       'arrow-down': '↓',
       'cloud': '☁️',
       'document': '📄',
+      'uml-enum': 'ℰ',
+      'uml-controller': '🧩',
+      'uml-service': '⚙️',
+      'uml-repository': '📦',
     };
     return icons[shape] || '▭';
   }
