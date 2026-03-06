@@ -2,11 +2,13 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { DiagramShape, Connection } from '../models/diagram.model';
 import { ValidationService } from './validation.service';
 import { NotificationService } from './notification.service';
+import { LayerService } from './layer.service';
 
 @Injectable({ providedIn: 'root' })
 export class DiagramService {
   private validation = inject(ValidationService);
   private notifications = inject(NotificationService);
+  private layerService = inject(LayerService);
 
   private shapes = signal<DiagramShape[]>([]);
   private connections = signal<Connection[]>([]);
@@ -53,7 +55,14 @@ export class DiagramService {
   }
 
   // --- LÓGICA DE EDITOR ---
-  addShape(shape: DiagramShape) { this.shapes.update(l => [...l, shape]); }
+  addShape(shape: DiagramShape) { 
+    this.shapes.update(l => [...l, shape]); 
+    // Asignar a la capa activa
+    const activeLayer = this.layerService.activeLayer();
+    if (activeLayer) {
+      this.layerService.assignShapeToLayer(shape.id, activeLayer.id);
+    }
+  }
   
   updateShape(id: string, updates: Partial<DiagramShape>) {
     this.shapes.update(l => l.map(s => s.id === id ? { ...s, ...updates } : s));
@@ -108,7 +117,12 @@ export class DiagramService {
   }
 
   getDiagramJson() {
-    return JSON.stringify({ shapes: this.shapes(), connections: this.connections(), zoom: this.zoom() });
+    return JSON.stringify({ 
+      shapes: this.shapes(), 
+      connections: this.connections(), 
+      zoom: this.zoom(),
+      layers: this.layerService.getState()
+    });
   }
 
   loadDiagramJson(json: string) {
@@ -126,6 +140,11 @@ export class DiagramService {
       this.connections.set(data.connections || []);
       this.zoom.set(data.zoom || 100);
       this.externalSql.set(null); // Limpiar SQL externo
+      
+      // Cargar capas si existen
+      if (data.layers) {
+        this.layerService.loadState(data.layers);
+      }
       
       // Mostrar información de lo que se cargó
       const shapeCount = (data.shapes || []).length;
