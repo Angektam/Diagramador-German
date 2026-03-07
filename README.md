@@ -49,21 +49,24 @@ El backend estará disponible en `http://localhost:3000`
 
 ## 📚 Documentación
 
-Toda la documentación está en la carpeta `docs/`:
+Toda la documentación está organizada en la carpeta `docs/`:
 
-- 👉 **[DOCUMENTACION_COMPLETA.md](./docs/DOCUMENTACION_COMPLETA.md)** - Guía completa de uso
-- 📐 **[ARQUITECTURA_REORGANIZACION.md](./docs/ARQUITECTURA_REORGANIZACION.md)** - Arquitectura del sistema
-- ✨ **[MEJORAS_SUGERIDAS.md](./docs/MEJORAS_SUGERIDAS.md)** - Roadmap y mejoras
-- 📄 **[CARGA_DOCUMENTOS.md](./docs/CARGA_DOCUMENTOS.md)** - Guía de carga de documentos
+### Documentos Principales
+- 👉 **[docs/README.md](./docs/README.md)** - Índice de toda la documentación
+- 📖 **[docs/INDICE_DOCUMENTACION.md](./docs/INDICE_DOCUMENTACION.md)** - Índice completo detallado
+- 📐 **[docs/ARQUITECTURA_REORGANIZACION.md](./docs/ARQUITECTURA_REORGANIZACION.md)** - Arquitectura del sistema
+- 📄 **[docs/DOCUMENTACION_COMPLETA.md](./docs/DOCUMENTACION_COMPLETA.md)** - Guía completa de uso
+- 🚀 **[docs/GUIA_DESARROLLO.md](./docs/GUIA_DESARROLLO.md)** - Guía para desarrolladores
+
+### Categorías
+- 📁 **[docs/ejemplos/](./docs/ejemplos/)** - Ejemplos de uso (entrevistas, procesos)
+- 📁 **[docs/pruebas/](./docs/pruebas/)** - Documentación de pruebas y casos de test
+- 📁 **[docs/resumenes/](./docs/resumenes/)** - Resúmenes ejecutivos y visuales
 
 ### Documentación por módulo
-- Frontend: [frontend/README.md](./README.md) (este archivo)
+- Frontend: Este archivo (README.md)
 - Backend: [backend/README.md](./backend/README.md)
 - Shared: [shared/README.md](./shared/README.md)
-
-### Archivos de Ejemplo
-- 🎤 **[ejemplo-entrevista.txt](./ejemplo-entrevista.txt)** - Ejemplo de entrevista con cliente
-- ⚙️ **[ejemplo-proceso-produccion.txt](./ejemplo-proceso-produccion.txt)** - Ejemplo de proceso de producción
 
 ## ✨ Características Destacadas
 
