@@ -4,15 +4,17 @@ import { DiagramService } from '../../services/diagram.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { ThemeService } from '../../services/theme.service';
+import { HistoryService } from '../../services/history.service';
 import { Router } from '@angular/router';
 import { ChatAssistantComponent } from '../chat-assistant/chat-assistant.component';
 import { SaveIndicatorComponent } from '../save-indicator/save-indicator.component';
 import { DocumentUploaderComponent } from '../document-uploader/document-uploader.component';
+import { SchemaTemplatesModalComponent } from '../schema-templates-modal/schema-templates-modal.component';
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule, ChatAssistantComponent, SaveIndicatorComponent, DocumentUploaderComponent],
+  imports: [CommonModule, ChatAssistantComponent, SaveIndicatorComponent, DocumentUploaderComponent, SchemaTemplatesModalComponent],
   template: `
     <header class="toolbar">
       <!-- Menu Bar -->
@@ -49,6 +51,10 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
               <span class="item-icon">💾</span>
               <span class="item-label">Importar SQL</span>
             </button>
+            <button class="dropdown-item" (click)="openSchemaTemplates()">
+              <span class="item-icon">📚</span>
+              <span class="item-label">Plantillas de Esquemas</span>
+            </button>
             <button class="dropdown-item" (click)="diagram.openSqlGeneratedModal()">
               <span class="item-icon">📝</span>
               <span class="item-label">Generar SQL</span>
@@ -64,12 +70,12 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
         <div class="menu-item">
           <button class="menu-btn" (click)="toggleMenu('editar')">Editar</button>
           <div class="dropdown-menu" *ngIf="activeMenu() === 'editar'" (click)="closeMenu()">
-            <button class="dropdown-item" disabled>
+            <button class="dropdown-item" [disabled]="!history.canUndo()" (click)="history.undo()">
               <span class="item-icon">↶</span>
               <span class="item-label">Deshacer</span>
               <span class="item-shortcut">Ctrl+Z</span>
             </button>
-            <button class="dropdown-item" disabled>
+            <button class="dropdown-item" [disabled]="!history.canRedo()" (click)="history.redo()">
               <span class="item-icon">↷</span>
               <span class="item-label">Rehacer</span>
               <span class="item-shortcut">Ctrl+Y</span>
@@ -212,10 +218,10 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
 
       <!-- Navigation -->
       <div class="toolbar-actions">
-        <button class="icon-btn" title="Deshacer">
+        <button (click)="history.undo()" [disabled]="!history.canUndo()" class="icon-btn" title="Deshacer (Ctrl+Z)">
           ↶
         </button>
-        <button class="icon-btn" title="Rehacer">
+        <button (click)="history.redo()" [disabled]="!history.canRedo()" class="icon-btn" title="Rehacer (Ctrl+Y)">
           ↷
         </button>
       </div>
@@ -278,6 +284,11 @@ import { DocumentUploaderComponent } from '../document-uploader/document-uploade
     
     <!-- Document Uploader Modal -->
     <app-document-uploader #documentUploader></app-document-uploader>
+    
+    <!-- Schema Templates Modal -->
+    @if (showSchemaTemplates()) {
+      <app-schema-templates-modal (close)="closeSchemaTemplates()"></app-schema-templates-modal>
+    }
   `,
   styles: [`
     .menu-bar {
@@ -580,8 +591,10 @@ export class ToolbarComponent {
   authService = inject(AuthService);
   notifications = inject(NotificationService);
   themeService = inject(ThemeService);
+  history = inject(HistoryService);
   
   activeMenu = signal<string | null>(null);
+  showSchemaTemplates = signal(false);
   
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('assistant') assistant!: ChatAssistantComponent;
@@ -635,6 +648,14 @@ export class ToolbarComponent {
   openShortcutsHelp(): void {
     // Disparar evento personalizado para abrir el modal de atajos
     window.dispatchEvent(new CustomEvent('open-shortcuts-help'));
+  }
+
+  openSchemaTemplates(): void {
+    this.showSchemaTemplates.set(true);
+  }
+
+  closeSchemaTemplates(): void {
+    this.showSchemaTemplates.set(false);
   }
 
   getCurrentUser(): string {

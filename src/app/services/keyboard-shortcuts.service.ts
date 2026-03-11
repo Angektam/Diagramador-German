@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { DiagramService } from './diagram.service';
 import { NotificationService } from './notification.service';
+import { HistoryService } from './history.service';
 
 export interface Shortcut {
   key: string;
@@ -17,6 +18,7 @@ export interface Shortcut {
 export class KeyboardShortcutsService {
   private diagram = inject(DiagramService);
   private notifications = inject(NotificationService);
+  private history = inject(HistoryService);
   
   private shortcuts: Shortcut[] = [
     {
@@ -52,13 +54,20 @@ export class KeyboardShortcutsService {
       key: 'z',
       ctrl: true,
       description: 'Deshacer',
-      action: () => this.notifications.info('Deshacer (próximamente)')
+      action: () => this.history.undo()
     },
     {
       key: 'y',
       ctrl: true,
       description: 'Rehacer',
-      action: () => this.notifications.info('Rehacer (próximamente)')
+      action: () => this.history.redo()
+    },
+    {
+      key: 'z',
+      ctrl: true,
+      shift: true,
+      description: 'Rehacer (alternativo)',
+      action: () => this.history.redo()
     },
     {
       key: 's',

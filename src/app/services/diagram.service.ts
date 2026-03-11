@@ -3,12 +3,14 @@ import { DiagramShape, Connection } from '../models/diagram.model';
 import { ValidationService } from './validation.service';
 import { NotificationService } from './notification.service';
 import { LayerService } from './layer.service';
+import { HistoryService } from './history.service';
 
 @Injectable({ providedIn: 'root' })
 export class DiagramService {
   private validation = inject(ValidationService);
   private notifications = inject(NotificationService);
   private layerService = inject(LayerService);
+  private history = inject(HistoryService);
 
   private shapes = signal<DiagramShape[]>([]);
   private connections = signal<Connection[]>([]);
@@ -62,18 +64,72 @@ export class DiagramService {
     if (activeLayer) {
       this.layerService.assignShapeToLayer(shape.id, activeLayer.id);
     }
+    
+    // Registrar en historial
+    this.history.addAction({
+      type: 'create',
+      timestamp: Date.now(),
+      description: `Crear tabla ${shape.text}`,
+      data: { shape },
+      undo: () => {
+        this.shapes.update(l => l.filter(s => s.id !== shape.id));
+        this.connections.update(l => l.filter(c => c.fromId !== shape.id && c.toId !== shape.id));
+      },
+      redo: () => {
+        this.shapes.update(l => [...l, shape]);
+      }
+    });
   }
   
   updateShape(id: string, updates: Partial<DiagramShape>) {
+    const oldShape = this.shapes().find(s => s.id === id);
+    if (!oldShape) return;
+    
+    const oldShapeCopy = { ...oldShape };
     this.shapes.update(l => l.map(s => s.id === id ? { ...s, ...updates } : s));
+    
+    // Registrar en historial
+    this.history.addAction({
+      type: 'update',
+      timestamp: Date.now(),
+      description: `Editar tabla ${oldShape.text}`,
+      data: { id, oldShape: oldShapeCopy, updates },
+      undo: () => {
+        this.shapes.update(l => l.map(s => s.id === id ? oldShapeCopy : s));
+      },
+      redo: () => {
+        this.shapes.update(l => l.map(s => s.id === id ? { ...s, ...updates } : s));
+      }
+    });
   }
 
   removeShape(id: string) {
+    const shape = this.shapes().find(s => s.id === id);
+    if (!shape) return;
+    
+    const connections = this.connections().filter(c => c.fromId === id || c.toId === id);
+    
     this.shapes.update(l => l.filter(s => s.id !== id));
     this.connections.update(l => l.filter(c => c.fromId !== id && c.toId !== id));
     if (this.selectedIds().includes(id)) {
       this.selectedIds.update(ids => ids.filter(i => i !== id));
     }
+    
+    // Registrar en historial
+    this.history.addAction({
+      type: 'delete',
+      timestamp: Date.now(),
+      description: `Eliminar tabla ${shape.text}`,
+      data: { shape, connections },
+      undo: () => {
+        this.shapes.update(l => [...l, shape]);
+        this.connections.update(l => [...l, ...connections]);
+      },
+      redo: () => {
+        this.shapes.update(l => l.filter(s => s.id !== id));
+        this.connections.update(l => l.filter(c => c.fromId !== id && c.toId !== id));
+      }
+    });
   }
 
   selectShape(id: string | null) { 
@@ -114,6 +170,7 @@ export class DiagramService {
     this.shapes.set([]);
     this.connections.set([]);
     this.externalSql.set(null);
+    this.history.clear(); // Limpiar historial al crear nuevo diagrama
   }
 
   getDiagramJson() {
@@ -549,7 +606,26 @@ export class DiagramService {
   closeTableModal() { this.tableModalOpen.set(false); }
   openTemplatesModal() { this.templatesModalOpen.set(true); }
   closeTemplatesModal() { this.templatesModalOpen.set(false); }
-  removeConnection(id: string) { this.connections.update(l => l.filter(c => c.id !== id)); }
+  removeConnection(id: string) { 
+    const connection = this.connections().find(c => c.id === id);
+    if (!connection) return;
+    
+    this.connections.update(l => l.filter(c => c.id !== id));
+    
+    // Registrar en historial
+    this.history.addAction({
+      type: 'connection',
+      timestamp: Date.now(),
+      description: 'Eliminar conexión',
+      data: { connection },
+      undo: () => {
+        this.connections.update(l => [...l, connection]);
+      },
+      redo: () => {
+        this.connections.update(l => l.filter(c => c.id !== id));
+      }
+    });
+  }
   startConnectMode() { 
     const selectedId = this.selectedIds()[0];
     this.connectingFromId.set(selectedId ?? null); 
@@ -565,6 +641,20 @@ export class DiagramService {
     };
     this.connections.update(list => [...list, connection]);
     this.notifications.success('Conexión creada');
+    
+    // Registrar en historial
+    this.history.addAction({
+      type: 'connection',
+      timestamp: Date.now(),
+      description: 'Crear conexión',
+      data: { connection },
+      undo: () => {
+        this.connections.update(list => list.filter(c => c.id !== connection.id));
+      },
+      redo: () => {
+        this.connections.update(list => [...list, connection]);
+      }
+    });
   }
 
   connectToShape(shapeId: string): boolean {
