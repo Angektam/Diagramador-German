@@ -19,7 +19,9 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "css",
-            "assets": ["src/assets"],
+            "assets": [
+              "src/assets"
+            ],
             "styles": ["src/styles.css"],
             "scripts": []
           },

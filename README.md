@@ -1,119 +1,108 @@
-# Diagramador SQL
+# 📄 Generador de Prompts para IA
 
-Aplicación web para crear diagramas de bases de datos de forma visual e intuitiva.
+Aplicación web para generar prompts optimizados para IA de generación de código a partir de documentación de proyectos.
 
-## 📁 Estructura del Proyecto
+## 🎯 ¿Qué hace?
 
-```
-diagramador/
-├── frontend/          # Aplicación Angular (actualmente en raíz)
-├── backend/           # API Node.js/Express (preparado)
-├── shared/            # Tipos e interfaces compartidas
-├── docs/              # Documentación completa
-└── README.md          # Este archivo
-```
+Sube tu documentación (PDFs, Word, Markdown, TXT) y el sistema:
+1. Analiza el contenido
+2. Detecta el tipo de proyecto
+3. Extrae requisitos y funcionalidades
+4. Genera un prompt estructurado y optimizado
+5. Listo para copiar y usar en ChatGPT, Claude, Copilot, etc.
 
 ## 🚀 Inicio Rápido
 
-### Frontend (Angular)
-
-1. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
-
-2. **Ejecutar en desarrollo**
-   ```bash
-   npm start
-   ```
-
-3. **Abrir en navegador**
-   ```
-   http://localhost:4200
-   ```
-
-4. **Login con credenciales demo**
-   - Admin: `admin` / `admin123`
-   - Usuario: `usuario` / `123456`
-   - Demo: `demo` / `demo`
-
-### Backend (Preparado para desarrollo futuro)
+### Instalación
 
 ```bash
-cd backend
 npm install
-npm run dev
 ```
 
-El backend estará disponible en `http://localhost:3000`
+### Desarrollo
 
-## 📚 Documentación
+```bash
+npm start
+```
 
-Toda la documentación está organizada en la carpeta `docs/`:
+Abre http://localhost:4200
 
-### Documentos Principales
-- 👉 **[docs/README.md](./docs/README.md)** - Índice de toda la documentación
-- 📖 **[docs/INDICE_DOCUMENTACION.md](./docs/INDICE_DOCUMENTACION.md)** - Índice completo detallado
-- 📐 **[docs/ARQUITECTURA_REORGANIZACION.md](./docs/ARQUITECTURA_REORGANIZACION.md)** - Arquitectura del sistema
-- 📄 **[docs/DOCUMENTACION_COMPLETA.md](./docs/DOCUMENTACION_COMPLETA.md)** - Guía completa de uso
-- 🚀 **[docs/GUIA_DESARROLLO.md](./docs/GUIA_DESARROLLO.md)** - Guía para desarrolladores
+### Login
 
-### Categorías
-- 📁 **[docs/ejemplos/](./docs/ejemplos/)** - Ejemplos de uso (entrevistas, procesos)
-- 📁 **[docs/pruebas/](./docs/pruebas/)** - Documentación de pruebas y casos de test
-- 📁 **[docs/resumenes/](./docs/resumenes/)** - Resúmenes ejecutivos y visuales
+Usa las credenciales demo:
+- Usuario: `demo` / Contraseña: `demo`
+- Admin: `admin` / Contraseña: `admin123`
 
-### Documentación por módulo
-- Frontend: Este archivo (README.md)
-- Backend: [backend/README.md](./backend/README.md)
-- Shared: [shared/README.md](./shared/README.md)
+## 📋 Flujo de Uso
 
-## ✨ Características Destacadas
-
-- 🎨 **Canvas ilimitado** (10000x10000px) con scrollbars
-- 🗺️ **Minimapa interactivo** arrastrable
-- 📥 **Importación SQL** con detección automática de relaciones
-- 📄 **Carga de documentos** (entrevistas, procesos, requisitos) con generación automática
-- 🧙‍♂️ **Asistente inteligente** con generación automática de BD
-- 📋 **Copiar/Pegar** con multi-selección (Ctrl+C/V/D)
-- 🔍 **Zoom** 25-200% con Ctrl+Wheel
-- 📱 **Soporte táctil** completo (panning + pinch zoom)
-- 🔒 **Validaciones** completas de seguridad
-- ⌨️ **Atajos de teclado** para productividad
+1. **Login** - Accede con tus credenciales
+2. **Sube documentos** - Arrastra o selecciona archivos (PDF, DOC, MD, TXT)
+3. **Analiza** - El sistema procesa la documentación
+4. **Revisa** - Ve el análisis del proyecto detectado
+5. **Genera** - Crea el prompt optimizado
+6. **Copia** - Usa el prompt en tu IA favorita
 
 ## 🛠️ Tecnologías
 
-- Angular 17 (Standalone Components)
-- TypeScript
-- SVG para renderizado
+- Angular 18 (Standalone Components)
+- TypeScript 5.x
 - Signals para reactividad
-- CSS moderno con variables
+- CSS moderno
 
-## 📦 Estructura Frontend (Angular)
+## 📁 Estructura
 
 ```
 src/
 ├── app/
-│   ├── components/     # Componentes UI
-│   │   ├── canvas/           # Canvas principal
-│   │   ├── toolbar/          # Barra de herramientas
-│   │   ├── shapes-panel/     # Panel de formas
-│   │   ├── format-panel/     # Panel de formato
-│   │   ├── chat-assistant/   # Asistente IA
-│   │   ├── diagram-wizard/   # Wizard de diagramas
-│   │   └── ...
-│   ├── services/       # Lógica de negocio
-│   │   ├── diagram.service.ts
-│   │   ├── auth.service.ts
-│   │   ├── chat-assistant.service.ts
-│   │   └── validation.service.ts
-│   ├── models/         # Interfaces y tipos
-│   └── guards/         # Protección de rutas
-├── assets/             # Recursos estáticos
-└── styles.css          # Estilos globales
+│   ├── components/
+│   │   ├── login/                    # Autenticación
+│   │   └── prompt-generator/         # Generador principal
+│   ├── services/
+│   │   ├── document-analyzer.service.ts    # Análisis de docs
+│   │   ├── prompt-generator.service.ts     # Generación de prompts
+│   │   ├── auth.service.ts                 # Autenticación
+│   │   └── notification.service.ts         # Notificaciones
+│   └── models/
+│       ├── project-info.interface.ts       # Info del proyecto
+│       └── prompt-template.interface.ts    # Templates
 ```
 
-## 🎯 Comandos Útiles
+## ✨ Características
+
+- 📁 Carga múltiple de archivos (drag & drop)
+- 🔍 Análisis inteligente de documentación
+- 🎯 Detección automática de tipo de proyecto
+- 🛠️ Identificación de tecnologías
+- 📋 Extracción de requisitos
+- 🏗️ Sugerencias de arquitectura
+- 📝 Generación de prompts estructurados
+- 📋 Copiar al portapapeles
+- 💾 Descargar como archivo
+
+## 🎨 Tipos de Proyecto Detectables
+
+- Aplicaciones Web (SPA, MPA)
+- APIs REST/GraphQL
+- Aplicaciones Móviles
+- Aplicaciones de Escritorio
+- Microservicios
+- CMS
+- E-commerce
+- Dashboards
+
+## 📝 Formato del Prompt Generado
+
+El prompt incluye:
+- Contexto del proyecto
+- Requisitos funcionales y no funcionales
+- Stack tecnológico
+- Arquitectura sugerida
+- Estructura de carpetas
+- Componentes principales
+- Guía de implementación
+- Checklist completo
+
+## 🔧 Comandos
 
 ```bash
 # Desarrollo
@@ -122,27 +111,14 @@ npm start
 # Build producción
 npm run build
 
-# Tests
-npm test
-
-# Linting
-npm run lint
+# Generar prompt desde CLI (script legacy)
+npm run generate-prompt
 ```
 
 ## 📄 Licencia
 
-Este proyecto es de código abierto.
+Código abierto
 
 ---
 
-**Nota**: Para información detallada sobre uso, características y validaciones, consulta [docs/DOCUMENTACION_COMPLETA.md](./docs/DOCUMENTACION_COMPLETA.md)
-
-## 🗺️ Roadmap
-
-- ✅ Frontend Angular completo con todas las funcionalidades
-- 🔄 Backend API REST (estructura preparada)
-- 📋 Base de datos PostgreSQL
-- 🔐 Autenticación JWT
-- 💾 Persistencia de diagramas
-- 🤝 Colaboración en tiempo real
-- 📤 Exportación avanzada (PNG, SVG, PDF)
+**Nota**: Este proyecto fue transformado desde un diagramador SQL a un generador de prompts para IA.

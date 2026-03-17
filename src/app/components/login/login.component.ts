@@ -20,9 +20,9 @@ import { NotificationService } from '../../services/notification.service';
       <div class="login-card">
         <!-- Logo and Brand -->
         <div class="brand-header">
-          <div class="logo-icon">📊</div>
-          <h1 class="brand-name">Diagramador SQL</h1>
-          <p class="brand-tagline">Crea diagramas profesionales en minutos</p>
+          <div class="logo-icon">📄</div>
+          <h1 class="brand-name">PromptGen</h1>
+          <p class="brand-tagline">Genera prompts para crear tu proyecto con IA</p>
         </div>
         
         <!-- Tabs -->
@@ -212,15 +212,15 @@ import { NotificationService } from '../../services/notification.service';
             <div class="register-benefits">
               <div class="benefit">
                 <span class="benefit-icon">✓</span>
-                <span>Diagramas ilimitados</span>
+                <span>Prompts ilimitados</span>
               </div>
               <div class="benefit">
                 <span class="benefit-icon">✓</span>
-                <span>Exportar a SQL</span>
+                <span>Historial de prompts</span>
               </div>
               <div class="benefit">
                 <span class="benefit-icon">✓</span>
-                <span>Colaboración en tiempo real</span>
+                <span>Soporte para PDF, DOC, TXT y más</span>
               </div>
             </div>
           </form>
@@ -229,7 +229,7 @@ import { NotificationService } from '../../services/notification.service';
       
       <!-- Footer -->
       <div class="login-footer">
-        <p>© 2026 Diagramador SQL • Hecho con ❤️</p>
+        <p>© 2026 PromptGen • Hecho con ❤️</p>
       </div>
     </div>
   `,
@@ -830,7 +830,7 @@ export class LoginComponent {
       
       if (success) {
         this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
-        this.router.navigate(['/gallery']);
+        this.router.navigate(['/dashboard']);
       } else {
         this.notifications.error('Usuario o contraseña incorrectos');
       }
@@ -903,11 +903,11 @@ export class LoginComponent {
       );
       
       if (success) {
-        // Auto‑login y redirección a la galería
+        // Auto‑login y redirección al generador
         this.authService.login(username, password);
         this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
         this.registerData = { username: '', email: '', password: '' };
-        this.router.navigate(['/gallery']);
+        this.router.navigate(['/dashboard']);
       } else {
         this.notifications.error('El usuario ya existe');
       }

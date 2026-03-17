@@ -1,11 +1,13 @@
 {
-  "name": "diagramador",
-  "version": "1.0.0",
+  "name": "prompt-generator",
+  "version": "2.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "generate-prompt": "npx ts-node scripts/generate-prompt.ts",
+    "test-prompt": "npm run generate-prompt && echo Prompt generado exitosamente"
   },
   "private": true,
   "dependencies": {
@@ -17,6 +19,7 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "pdfjs-dist": "^5.5.207",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
@@ -26,6 +29,7 @@
     "@angular/cli": "^18.2.0",
     "@angular/compiler-cli": "^18.2.0",
     "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.5.0"
   }
 }
