@@ -1,4 +1,5 @@
 import { ProjectType } from './project-info.interface';
+export type PromptTargetModel = 'auto' | 'gpt' | 'claude' | 'gemini';
 
 export interface PromptTemplate {
   type: ProjectType;
@@ -18,5 +19,7 @@ export interface GeneratedPrompt {
     generatedAt: Date;
     documentCount: number;
     wordCount: number;
+    targetModel?: PromptTargetModel;
+    targetTokenBudget?: number;
   };
 }

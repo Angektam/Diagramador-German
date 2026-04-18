@@ -1,18 +1,27 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, HostListener, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DocumentAnalyzerService } from '../../services/document-analyzer.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DocumentAnalyzerService, AnalysisResult } from '../../services/document-analyzer.service';
 import { PromptGeneratorService } from '../../services/prompt-generator.service';
 import { FileParserService } from '../../services/file-parser.service';
 import { PromptHistoryService } from '../../services/prompt-history.service';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
+import { TitleService } from '../../services/title.service';
+import { TemplateStoreService } from '../../services/template-store.service';
+import { ShareService } from '../../services/share.service';
+import { ClipboardService } from '../../services/clipboard.service';
+import { formatPromptJson } from '../../utils/json-formatter';
 import { ProjectInfo, ProjectType } from '../../models/project-info.interface';
-import { GeneratedPrompt } from '../../models/prompt-template.interface';
+import { GeneratedPrompt, PromptTargetModel } from '../../models/prompt-template.interface';
 
 type Step = 'upload' | 'analyzing' | 'analysis' | 'prompt';
 type InputMode = 'file' | 'text';
+type UiPromptModel = PromptTargetModel;
+type TokenBudget = 800 | 1200 | 2000 | 3500;
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
   { value: 'web-app',       label: 'Web App',       icon: '🌐' },
@@ -72,10 +81,10 @@ const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
           </div>
 
           <div class="input-tabs">
-            <button class="input-tab" [class.active]="inputMode() === 'file'" (click)="inputMode.set('file')">
+            <button class="input-tab" [class.active]="inputMode() === 'file'" (click)="setInputMode('file')">
               📁 Subir archivos
             </button>
-            <button class="input-tab" [class.active]="inputMode() === 'text'" (click)="inputMode.set('text')">
+            <button class="input-tab" [class.active]="inputMode() === 'text'" (click)="setInputMode('text')">
               ✏️ Pegar texto
             </button>
           </div>
@@ -116,14 +125,22 @@ const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
 
             @if (inputMode() === 'text') {
               <div class="text-section">
-                <textarea [(ngModel)]="pastedText" class="paste-area"
+                <textarea class="paste-area"
+                  [value]="pastedText"
+                  (input)="onTextInput($any($event.target).value)"
                   placeholder="Pega aquí la documentación de tu proyecto: requisitos, historias de usuario, descripción, entrevistas con el cliente...
 
 Ejemplo:
 Sistema de gestión de inventario para una tienda.
 El sistema debe permitir registrar productos, controlar stock, generar alertas cuando el stock es bajo y generar reportes de ventas..."></textarea>
+                <div class="char-progress-wrap">
+                  <div class="char-progress-bar" [style.width.%]="Math.min(100, textLength() / 100)" [class.warn]="textLength() > 8000"></div>
+                </div>
                 <div class="text-actions">
-                  <span class="char-count" [class.warn]="pastedText.length > 8000">{{ pastedText.length }} caracteres</span>
+                  <span class="char-count" [class.warn]="textLength() > 8000">
+                    {{ textLength() }} / 10,000 caracteres
+                    @if (textLength() > 8000) { <span> ⚠️ muy largo</span> }
+                  </span>
                   <button class="btn-primary" (click)="analyzeText()" [disabled]="pastedText.trim().length < 50">🔍 Analizar Texto</button>
                 </div>
               </div>
@@ -140,6 +157,10 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
             </div>
             <h2>Analizando documentación...</h2>
             <p>{{ analyzeStatus() }}</p>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" [style.width.%]="analyzeProgress()"></div>
+            </div>
+            <span class="progress-pct">{{ analyzeProgress() }}%</span>
           </div>
         }
 
@@ -169,6 +190,17 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
             </div>
           </div>
 
+          <!-- Resumen + Confianza -->
+          <div class="summary-bar">
+            <div class="summary-text">💡 {{ projectInfo()!.summary }}</div>
+            <div class="confidence-badge confidence-{{ projectInfo()!.confidence.level }}"
+                 [title]="projectInfo()!.confidence.detail">
+              {{ projectInfo()!.confidence.level === 'high' ? '🟢' : projectInfo()!.confidence.level === 'medium' ? '🟡' : '🔴' }}
+              Confianza {{ projectInfo()!.confidence.level === 'high' ? 'alta' : projectInfo()!.confidence.level === 'medium' ? 'media' : 'baja' }}
+              ({{ projectInfo()!.confidence.score }}/10)
+            </div>
+          </div>
+
           <div class="detail-card">
             <div class="detail-row">
               <span class="detail-label">Nombre</span>
@@ -184,30 +216,41 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
                 }
               </div>
             </div>
-            @if (projectInfo()!.technologies.length > 0) {
-              <div class="detail-row">
-                <span class="detail-label">Tecnologías</span>
+            <div class="detail-row">
+              <span class="detail-label">Tecnologías</span>
+              <div class="tech-edit-area">
                 <div class="tech-tags">
-                  @for (t of projectInfo()!.technologies; track t) {
-                    <span class="tech-tag">{{ t }}</span>
+                  @for (t of editTechs; track t) {
+                    <span class="tech-tag removable" (click)="removeTech(t)" title="Quitar">{{ t }} ×</span>
                   }
                 </div>
+                <div class="tech-add-row">
+                  <input class="tech-input" [(ngModel)]="newTech" placeholder="Agregar tecnología..." (keyup.enter)="addTech()" />
+                  <button class="btn-add-tech" (click)="addTech()" [disabled]="!newTech.trim()">+ Agregar</button>
+                </div>
               </div>
-            }
+            </div>
             @if (projectInfo()!.requirements.length > 0) {
               <div class="detail-row col">
                 <span class="detail-label">Requisitos detectados</span>
                 <div class="req-list">
-                  @for (r of projectInfo()!.requirements.slice(0, 8); track r.id) {
-                    <div class="req-item">
+                  @for (r of editReqs.slice(0, 10); track r.id) {
+                    <div class="req-item" [class.excluded]="r.excluded">
                       <span class="req-badge" [class]="r.type">{{ r.type === 'functional' ? 'F' : 'NF' }}</span>
                       <span class="req-priority" [class]="r.priority">{{ r.priority }}</span>
-                      <span>{{ r.description }}</span>
+                      <span class="req-desc">{{ r.description }}</span>
+                      <button class="req-toggle" (click)="toggleReq(r.id)" [title]="r.excluded ? 'Incluir' : 'Excluir'">
+                        {{ r.excluded ? '＋' : '✕' }}
+                      </button>
                     </div>
                   }
-                  @if (projectInfo()!.requirements.length > 8) {
-                    <p class="more">+{{ projectInfo()!.requirements.length - 8 }} más</p>
+                  @if (editReqs.length > 10) {
+                    <p class="more">+{{ editReqs.length - 10 }} más</p>
                   }
+                </div>
+                <div class="tech-add-row">
+                  <input class="tech-input" [(ngModel)]="newReq" placeholder="Agregar requisito manualmente..." (keyup.enter)="addReq()" />
+                  <button class="btn-add-tech" (click)="addReq()" [disabled]="!newReq.trim()">+ Agregar</button>
                 </div>
               </div>
             }
@@ -226,10 +269,90 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
             }
           </div>
 
+          <!-- Sugerencias de stack -->
+          <div class="stack-suggestions-wrap">
+            <button class="link-btn" (click)="showStackSuggestions.set(!showStackSuggestions())">
+              💡 {{ showStackSuggestions() ? 'Ocultar' : 'Ver' }} stacks sugeridos para {{ typeLabel(editType) }}
+            </button>
+            @if (showStackSuggestions()) {
+              <div class="stack-grid">
+                @for (s of projectInfo()!.stackSuggestions; track s.name) {
+                  <div class="stack-card">
+                    <div class="stack-name">{{ s.name }}</div>
+                    <div class="stack-desc">{{ s.description }}</div>
+                    <div class="stack-techs">{{ s.techs.join(' · ') }}</div>
+                    <button class="btn-add-tech" (click)="applyStackSuggestion(s.techs)">Aplicar</button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Presets de instrucciones extra -->
+          <div class="presets-wrap">
+            <div class="presets-label">⚡ Instrucciones extra (click para activar):</div>
+            <div class="presets-grid">
+              @for (p of instructionPresets; track p.value) {
+                <button class="preset-btn" [class.active]="isInstructionActive(p.value)" (click)="toggleInstruction(p.value)">
+                  {{ p.label }}
+                </button>
+              }
+            </div>
+          </div>
+
           <div class="action-row">
             <button class="btn-secondary" (click)="reset()">← Volver</button>
+            <div class="lang-selector">
+              <span class="lang-label">Idioma del prompt:</span>
+              <button class="lang-btn" [class.active]="promptLang() === 'es'" (click)="setPromptLang('es')">🇪🇸 Español</button>
+              <button class="lang-btn" [class.active]="promptLang() === 'en'" (click)="setPromptLang('en')">🇺🇸 English</button>
+            </div>
+            <div class="lang-selector">
+              <span class="lang-label">Modelo:</span>
+              <button class="lang-btn" [class.active]="promptModel() === 'auto'" (click)="setPromptModel('auto')">Auto</button>
+              <button class="lang-btn" [class.active]="promptModel() === 'gpt'" (click)="setPromptModel('gpt')">GPT</button>
+              <button class="lang-btn" [class.active]="promptModel() === 'claude'" (click)="setPromptModel('claude')">Claude</button>
+              <button class="lang-btn" [class.active]="promptModel() === 'gemini'" (click)="setPromptModel('gemini')">Gemini</button>
+            </div>
+            <div class="lang-selector">
+              <span class="lang-label">Tokens máx:</span>
+              <button class="lang-btn" [class.active]="tokenBudget() === 800" (click)="setTokenBudget(800)">800</button>
+              <button class="lang-btn" [class.active]="tokenBudget() === 1200" (click)="setTokenBudget(1200)">1200</button>
+              <button class="lang-btn" [class.active]="tokenBudget() === 2000" (click)="setTokenBudget(2000)">2000</button>
+              <button class="lang-btn" [class.active]="tokenBudget() === 3500" (click)="setTokenBudget(3500)">3500</button>
+            </div>
+            <button class="btn-secondary" (click)="showTemplates.set(!showTemplates())" title="Plantillas guardadas">📋 Plantillas</button>
+            <button class="btn-secondary" (click)="generateShortPrompt()" title="Prompt corto para modelos con contexto limitado">⚡ Prompt corto</button>
             <button class="btn-primary" (click)="generatePrompt()">✨ Generar Prompt</button>
           </div>
+
+          <!-- Templates panel -->
+          @if (showTemplates()) {
+            <div class="templates-panel">
+              <div class="templates-header">
+                <span>📋 Plantillas guardadas</span>
+                <button class="link-btn" (click)="showTemplates.set(false)">✕</button>
+              </div>
+              @if (templateStore.templates().length === 0) {
+                <p class="templates-empty">No hay plantillas. Guarda el stack actual para reutilizarlo.</p>
+              } @else {
+                @for (t of templateStore.templates(); track t.id) {
+                  <div class="template-row">
+                    <div class="template-info">
+                      <span class="template-name">{{ t.name }}</span>
+                      <span class="template-techs">{{ t.technologies.join(', ') }}</span>
+                    </div>
+                    <button class="action-btn-sm" (click)="applyTemplate(t)">Aplicar</button>
+                    <button class="action-btn-sm danger" (click)="templateStore.delete(t.id)">✕</button>
+                  </div>
+                }
+              }
+              <div class="template-save-row">
+                <input class="tech-input" [(ngModel)]="templateName" placeholder="Nombre de la plantilla..." (keyup.enter)="saveTemplate()" />
+                <button class="btn-add-tech" (click)="saveTemplate()" [disabled]="!templateName.trim()">💾 Guardar actual</button>
+              </div>
+            </div>
+          }
         }
 
         <!-- STEP: PROMPT -->
@@ -238,30 +361,61 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
             <h1>Prompt Generado</h1>
             <div class="prompt-meta">
               <span>📄 {{ generatedPrompt()!.metadata.documentCount }} docs</span>
-              <span>📝 {{ generatedPrompt()!.metadata.wordCount }} palabras</span>
+              <span>📝 {{ wordCount }} palabras</span>
+              <span class="token-badge token-{{ tokenLevel }}">~{{ tokenEstimate.toLocaleString('es-ES') }} tokens</span>
+              <span>{{ promptLang() === 'en' ? '🇺🇸 English' : '🇪🇸 Español' }}</span>
+              <span>🤖 {{ modelLabel(generatedPrompt()!.metadata.targetModel ?? promptModel()) }}</span>
+              <span>🎯 {{ generatedPrompt()!.metadata.targetTokenBudget ?? tokenBudget() }} máx</span>
             </div>
           </div>
 
-          <div class="tip-banner">
-            💡 Copia este prompt y pégalo en ChatGPT, Claude, Gemini o cualquier IA de código para generar tu proyecto completo.
-          </div>
+          @if (tokenWarning) {
+            <div class="warn-banner">
+              ⚠️ Este prompt supera las 8,000 tokens. Algunos modelos pueden truncarlo. Considera usar Claude o GPT-4 con contexto largo.
+              <div class="cost-row">
+                <span>Costo estimado:</span>
+                <span>GPT-4: {{ costEstimate.gpt4 }}</span>
+                <span>Claude: {{ costEstimate.claude }}</span>
+                <span>Gemini: {{ costEstimate.gemini }}</span>
+              </div>
+            </div>
+          } @else {
+            <div class="tip-banner">
+              💡 Copia este prompt y pégalo en ChatGPT, Claude, Gemini o cualquier IA de código para generar tu proyecto completo.
+              <div class="cost-row">
+                <span>Costo estimado:</span>
+                <span>GPT-4: {{ costEstimate.gpt4 }}</span>
+                <span>Claude: {{ costEstimate.claude }}</span>
+                <span>Gemini: {{ costEstimate.gemini }}</span>
+              </div>
+            </div>
+          }
 
-          <div class="prompt-box">
+          <div class="prompt-box" [class.fullscreen]="fullscreen()">
             <div class="prompt-box-header">
               <span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span>
-              <span class="prompt-box-label">prompt.md</span>
-              <button class="copy-inline-btn" (click)="copyPrompt()">📋 Copiar</button>
+              <span class="prompt-box-label">{{ shortMode() ? 'prompt-corto.md' : 'prompt.md' }}</span>
+              @if (shortMode()) { <span class="short-badge">⚡ Corto</span> }
+              <button class="copy-inline-btn" [class.copied]="copyDone()" (click)="copyPrompt()">
+                {{ copyDone() ? '✓ Copiado' : '📋 Copiar' }}
+              </button>
+              <button class="fullscreen-btn" (click)="fullscreen.set(!fullscreen())" [title]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'">
+                {{ fullscreen() ? '⊠' : '⊞' }}
+              </button>
             </div>
             <div class="prompt-box-scroll">
-              <pre>{{ generatedPrompt()!.content }}</pre>
+              <pre [innerHTML]="coloredPrompt"></pre>
             </div>
           </div>
 
           <div class="action-row">
             <button class="btn-secondary" (click)="goToDashboard()">🗂️ Ver Proyectos</button>
             <button class="btn-secondary" (click)="reset()">🔄 Nuevo</button>
-            <button class="btn-secondary" (click)="downloadPrompt()">💾 Descargar .md</button>
-            <button class="btn-primary" (click)="copyPrompt()">📋 Copiar Prompt</button>
+            <button class="btn-secondary" (click)="downloadPrompt()">💾 Descargar .json</button>
+            <button class="btn-secondary" (click)="sharePrompt()">🔗 Compartir</button>
+            <button class="btn-primary" [class.btn-copied]="copyDone()" (click)="copyPrompt()">
+              {{ copyDone() ? '✓ Copiado' : '📋 Copiar Prompt' }}
+            </button>
           </div>
         }
 
@@ -348,7 +502,10 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .spinner-inner { position: absolute; inset: 8px; border: 3px solid transparent; border-bottom-color: var(--c-accent-3); border-radius: 50%; animation: spin .7s linear infinite reverse; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .center-state h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .center-state p { font-size: 14px; color: var(--c-text-2); }
+    .center-state p { font-size: 14px; color: var(--c-text-2); margin-bottom: 20px; }
+    .progress-bar-wrap { width: 280px; height: 6px; background: var(--c-border); border-radius: 99px; overflow: hidden; margin-top: 16px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--c-accent), var(--c-accent-3)); border-radius: 99px; transition: width .4s ease; }
+    .progress-pct { font-size: 12px; color: var(--c-text-3); margin-top: 8px; }
 
     /* STATS */
     .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
@@ -370,6 +527,15 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .type-btn.active { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); font-weight: 600; }
     .tech-tags { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
     .tech-tag { background: var(--c-accent-bg); color: var(--c-accent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--c-accent-bd); }
+    .tech-tag.removable { cursor: pointer; transition: all var(--t); }
+    .tech-tag.removable:hover { background: var(--c-red-bg); color: var(--c-red); border-color: var(--c-red); }
+    .tech-edit-area { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .tech-add-row { display: flex; gap: 8px; align-items: center; }
+    .tech-input { flex: 1; max-width: 220px; padding: 6px 12px; border: 1.5px solid var(--c-border); border-radius: 8px; font-size: 13px; color: var(--c-text); background: var(--c-bg); transition: border-color var(--t); }
+    .tech-input:focus { outline: none; border-color: var(--c-accent); background: #fff; }
+    .btn-add-tech { padding: 6px 14px; background: var(--c-accent-bg); border: 1px solid var(--c-accent-bd); color: var(--c-accent); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all var(--t); }
+    .btn-add-tech:hover:not(:disabled) { background: var(--c-accent); color: #fff; }
+    .btn-add-tech:disabled { opacity: .4; cursor: not-allowed; }
     .req-list, .feat-list { display: flex; flex-direction: column; gap: 8px; }
     .req-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--c-text-2); line-height: 1.5; }
     .req-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
@@ -382,8 +548,10 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .feat-item { font-size: 13px; color: var(--c-text-2); padding: 8px 12px; background: var(--c-bg); border-radius: 8px; border-left: 3px solid var(--c-accent-bd); }
     .more { font-size: 12px; color: var(--c-text-3); font-style: italic; }
 
-    /* TIP */
+    /* TIP / WARN */
     .tip-banner { background: var(--c-accent-bg); border: 1px solid var(--c-accent-bd); border-radius: 12px; padding: 12px 16px; font-size: 13.5px; color: var(--c-accent); margin-bottom: 20px; line-height: 1.5; }
+    .warn-banner { background: var(--c-amber-bg); border: 1px solid #fcd34d; border-radius: 12px; padding: 12px 16px; font-size: 13.5px; color: var(--c-amber); margin-bottom: 20px; line-height: 1.5; }
+    .warn-badge { color: var(--c-amber) !important; }
 
     /* PROMPT BOX */
     .prompt-box { background: var(--c-code-bg); border-radius: 16px; margin-bottom: 24px; overflow: hidden; box-shadow: 0 20px 25px rgba(0,0,0,.1); }
@@ -393,6 +561,7 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .prompt-box-label { margin-left: 8px; font-size: 12px; color: rgba(255,255,255,.3); flex: 1; }
     .copy-inline-btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.6); padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all var(--t); }
     .copy-inline-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .copy-inline-btn.copied { background: rgba(34,197,94,.2); border-color: rgba(34,197,94,.4); color: #4ade80; }
     .prompt-box-scroll { padding: 22px 24px; max-height: 480px; overflow-y: auto; }
     .prompt-box-scroll::-webkit-scrollbar { width: 6px; }
     .prompt-box-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
@@ -405,39 +574,192 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .btn-primary.full { width: 100%; }
     .btn-secondary { padding: 11px 24px; background: var(--c-surface); color: var(--c-text-2); border: 1px solid var(--c-border); border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all var(--t); }
     .btn-secondary:hover { border-color: var(--c-accent-bd); color: var(--c-accent); background: var(--c-accent-bg); }
-    .action-row { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .action-row { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; align-items: center; }
     .link-btn { background: none; border: none; font-size: 13px; color: var(--c-accent); cursor: pointer; padding: 0; font-weight: 500; }
     .link-btn:hover { text-decoration: underline; }
+    /* Lang selector */
+    .lang-selector { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+    .lang-label { font-size: 12px; color: var(--c-text-3); }
+    .lang-btn { padding: 6px 12px; border: 1.5px solid var(--c-border); background: var(--c-bg); border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--c-text-2); cursor: pointer; transition: all var(--t); }
+    .lang-btn:hover { border-color: var(--c-accent-bd); color: var(--c-accent); }
+    .lang-btn.active { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); font-weight: 600; }
+    /* Copied state */
+    .btn-copied { background: linear-gradient(135deg, #16a34a, #22c55e) !important; box-shadow: 0 2px 8px rgba(22,163,74,.35) !important; }
+    /* Token badge */
+    .token-badge { font-weight: 600 !important; }
+    .token-green { border-color: #22c55e !important; color: #16a34a !important; }
+    .token-amber { border-color: #f59e0b !important; color: #d97706 !important; }
+    .token-red   { border-color: #ef4444 !important; color: #dc2626 !important; }
+    /* Req excluded */
+    .req-item.excluded { opacity: .4; text-decoration: line-through; }
+    .req-desc { flex: 1; }
+    .req-toggle { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--c-text-3); padding: 0 4px; flex-shrink: 0; }
+    .req-toggle:hover { color: var(--c-red); }
+    /* Char progress */
+    .char-progress-wrap { height: 3px; background: var(--c-border); border-radius: 99px; overflow: hidden; margin: 4px 0; }
+    .char-progress-bar { height: 100%; background: linear-gradient(90deg, var(--c-accent), var(--c-accent-3)); border-radius: 99px; transition: width .2s, background .2s; }
+    .char-progress-bar.warn { background: linear-gradient(90deg, var(--c-amber), var(--c-red)); }
+    /* Fullscreen prompt box */
+    .prompt-box.fullscreen { position: fixed; inset: 0; z-index: 200; border-radius: 0; margin: 0; }
+    .prompt-box.fullscreen .prompt-box-scroll { max-height: calc(100vh - 52px); }
+    .fullscreen-btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.6); padding: 4px 10px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all var(--t); margin-left: 4px; }
+    .fullscreen-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .short-badge { background: rgba(251,191,36,.2); border: 1px solid rgba(251,191,36,.4); color: #fbbf24; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    /* Colored prompt sections */
+    .prompt-box-scroll pre .ps-sep     { color: #6366f1; font-weight: 700; }
+    .prompt-box-scroll pre .ps-doc     { color: #38bdf8; font-weight: 700; }
+    .prompt-box-scroll pre .ps-analysis{ color: #34d399; font-weight: 700; }
+    .prompt-box-scroll pre .ps-instr   { color: #f59e0b; font-weight: 700; }
+    .prompt-box-scroll pre .ps-struct  { color: #a78bfa; font-weight: 700; }
+    .prompt-box-scroll pre .ps-tech    { color: #fb7185; font-weight: 700; }
+    .prompt-box-scroll pre .ps-result  { color: #4ade80; font-weight: 700; }
+    /* Templates panel */
+    .templates-panel { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 14px; padding: 18px; margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .templates-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--c-text); }
+    .templates-empty { font-size: 13px; color: var(--c-text-3); font-style: italic; }
+    .template-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 8px; }
+    .template-info { flex: 1; min-width: 0; }
+    .template-name { font-size: 13px; font-weight: 700; color: var(--c-text); display: block; }
+    .template-techs { font-size: 11px; color: var(--c-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .action-btn-sm { padding: 4px 10px; border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--c-text-2); cursor: pointer; transition: all var(--t); }
+    .action-btn-sm:hover { border-color: var(--c-accent-bd); color: var(--c-accent); background: var(--c-accent-bg); }
+    .action-btn-sm.danger:hover { border-color: var(--c-red); color: var(--c-red); background: var(--c-red-bg); }
+    .template-save-row { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--c-border); padding-top: 12px; }
+    /* Summary bar */
+    .summary-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .summary-text { flex: 1; font-size: 13px; color: var(--c-text-2); line-height: 1.5; min-width: 200px; }
+    .confidence-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; flex-shrink: 0; cursor: help; }
+    .confidence-high   { background: var(--c-green-bg); color: var(--c-green); border: 1px solid #86efac; }
+    .confidence-medium { background: var(--c-amber-bg); color: var(--c-amber); border: 1px solid #fcd34d; }
+    .confidence-low    { background: var(--c-red-bg);   color: var(--c-red);   border: 1px solid #fca5a5; }
+    /* Stack suggestions */
+    .stack-suggestions-wrap { margin-bottom: 16px; }
+    .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+    .stack-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .stack-name { font-size: 13px; font-weight: 700; color: var(--c-text); }
+    .stack-desc { font-size: 11px; color: var(--c-text-3); }
+    .stack-techs { font-size: 11px; color: var(--c-accent); font-weight: 500; }
+    /* Instruction presets */
+    .presets-wrap { margin-bottom: 16px; }
+    .presets-label { font-size: 12px; font-weight: 600; color: var(--c-text-3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .presets-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .preset-btn { padding: 6px 14px; border: 1.5px solid var(--c-border); background: var(--c-bg); border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--c-text-2); cursor: pointer; transition: all var(--t); }
+    .preset-btn:hover { border-color: var(--c-accent-bd); color: var(--c-accent); }
+    .preset-btn.active { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); font-weight: 700; }
+    /* Cost row */
+    .cost-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; opacity: .8; }
+    .cost-row span:first-child { font-weight: 600; }
   `]
 })
-export class PromptGeneratorComponent {
+export class PromptGeneratorComponent implements OnInit, OnDestroy {
   private analyzer = inject(DocumentAnalyzerService);
   private promptGen = inject(PromptGeneratorService);
   private fileParser = inject(FileParserService);
   private notifications = inject(NotificationService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  readonly theme = inject(ThemeService);
+  private titleSvc = inject(TitleService);
+  private sanitizer = inject(DomSanitizer);
   history = inject(PromptHistoryService);
+  readonly templateStore = inject(TemplateStoreService);
+  private shareService = inject(ShareService);
+  private clipboard = inject(ClipboardService);
 
   readonly projectTypes = PROJECT_TYPES;
+  readonly Math = Math;
 
   step = signal<Step>('upload');
-  inputMode = signal<InputMode>('file');
+  inputMode = signal<InputMode>(
+    (localStorage.getItem('pg_input_mode') as InputMode) ?? 'file'
+  );
   isDragOver = signal(false);
   uploadedFiles = signal<File[]>([]);
   parsedContents = signal<string[]>([]);
-  projectInfo = signal<ProjectInfo | null>(null);
+  projectInfo = signal<AnalysisResult | null>(null);
   generatedPrompt = signal<GeneratedPrompt | null>(null);
   analyzeStatus = signal('Extrayendo texto...');
+  analyzeProgress = signal(0);
+  copyDone = signal(false);
+  promptLang = signal<'es' | 'en'>(
+    (localStorage.getItem('pg_prompt_lang') as 'es' | 'en') ?? 'es'
+  );
+  promptModel = signal<UiPromptModel>(
+    (localStorage.getItem('pg_prompt_model') as UiPromptModel) ?? 'auto'
+  );
+  tokenBudget = signal<TokenBudget>(
+    ((Number(localStorage.getItem('pg_token_budget')) || 800) as TokenBudget)
+  );
+  fullscreen = signal(false);
+  shortMode = signal(false);
+  showTemplates = signal(false);
+  showStackSuggestions = signal(false);
+  extraInstructions = signal<string[]>([]);
+  templateName = '';
+  private textDebounce: any = null;
+  textLength = signal(0);
 
   pastedText = '';
   editName = '';
   editType: ProjectType = 'other';
+  editTechs: string[] = [];
+  editReqs: Array<{ id: string; description: string; type: 'functional' | 'non-functional'; priority: 'high' | 'medium' | 'low'; excluded: boolean }> = [];
+  newTech = '';
+  newReq = '';
+
+  ngOnInit() { this.titleSvc.set('Nuevo Prompt'); }
+  ngOnDestroy() { this.titleSvc.reset(); }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(e: BeforeUnloadEvent) {
+    if (this.step() === 'analyzing' || this.step() === 'analysis') {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && this.step() === 'analysis') { this.reset(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (this.step() === 'upload') {
+        if (this.inputMode() === 'file' && this.uploadedFiles().length) this.analyzeDocuments();
+        else if (this.inputMode() === 'text' && this.pastedText.trim().length >= 50) this.analyzeText();
+      } else if (this.step() === 'analysis') {
+        this.generatePrompt();
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && this.step() === 'prompt') {
+      // solo si no hay selección de texto activa
+      if (!window.getSelection()?.toString()) { e.preventDefault(); this.copyPrompt(); }
+    }
+  }
 
   get currentUser() { return this.authService.user()?.username ?? 'Usuario'; }
 
   logout() { this.authService.logout(); }
   goToDashboard() { this.router.navigate(['/dashboard']); }
+
+  setInputMode(mode: InputMode) {
+    this.inputMode.set(mode);
+    localStorage.setItem('pg_input_mode', mode);
+  }
+
+  setPromptLang(lang: 'es' | 'en') {
+    this.promptLang.set(lang);
+    localStorage.setItem('pg_prompt_lang', lang);
+  }
+
+  setPromptModel(model: UiPromptModel) {
+    this.promptModel.set(model);
+    localStorage.setItem('pg_prompt_model', model);
+  }
+
+  setTokenBudget(budget: TokenBudget) {
+    this.tokenBudget.set(budget);
+    localStorage.setItem('pg_token_budget', String(budget));
+  }
 
   onDragOver(e: DragEvent) { e.preventDefault(); this.isDragOver.set(true); }
   onDragLeave(e: DragEvent) { e.preventDefault(); this.isDragOver.set(false); }
@@ -445,7 +767,21 @@ export class PromptGeneratorComponent {
   onFileSelected(e: Event) { this.addFiles(Array.from((e.target as HTMLInputElement).files ?? [])); }
 
   private addFiles(files: File[]) {
+    const allowedExt = new Set(['pdf', 'doc', 'docx', 'md', 'txt']);
+    const allowedMime = new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/markdown',
+      'text/plain',
+      ''
+    ]);
     const valid = files.filter(f => {
+      const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
+      if (!allowedExt.has(ext) || !allowedMime.has(f.type)) {
+        this.notifications.error(`${f.name} no es un tipo de archivo soportado`);
+        return false;
+      }
       if (f.size > 10 * 1024 * 1024) { this.notifications.error(`${f.name} supera 10MB`); return false; }
       return true;
     });
@@ -458,22 +794,57 @@ export class PromptGeneratorComponent {
   async analyzeDocuments() {
     if (!this.uploadedFiles().length) { this.notifications.warning('Carga al menos un documento'); return; }
     this.step.set('analyzing');
-    this.analyzeStatus.set('Leyendo archivos...');
-    try {
-      const contents = await Promise.all(this.uploadedFiles().map(f => this.fileParser.parseFile(f)));
-      const valid = contents.filter(c => c.trim().length > 20);
-      if (!valid.length) { this.notifications.error('No se pudo extraer texto'); this.step.set('upload'); return; }
-      this.analyzeStatus.set('Detectando requisitos y tecnologías...');
-      setTimeout(() => { this.finishAnalysis(valid); }, 900);
-    } catch { this.notifications.error('Error al analizar'); this.step.set('upload'); }
+    this.analyzeProgress.set(0);
+    const files = this.uploadedFiles();
+    const contents: string[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      this.analyzeStatus.set(`Leyendo archivo ${i + 1} de ${files.length}: ${files[i].name}`);
+      this.analyzeProgress.set(Math.round((i / files.length) * 70));
+      try {
+        const text = await this.fileParser.parseFile(files[i]);
+        if (text.trim().length > 20) {
+          contents.push(text);
+        } else {
+          errors.push(`${files[i].name}: sin texto extraíble`);
+        }
+      } catch (e: any) {
+        console.error(`Error parseando ${files[i].name}:`, e);
+        errors.push(`${files[i].name}: ${e?.message ?? 'error desconocido'}`);
+      }
+    }
+
+    if (!contents.length) {
+      const msg = errors.length ? `No se pudo extraer texto. ${errors[0]}` : 'No se pudo extraer texto de los archivos';
+      this.notifications.error(msg, 6000);
+      this.step.set('upload');
+      return;
+    }
+
+    if (errors.length) {
+      this.notifications.warning(`${errors.length} archivo(s) con problemas, continuando con ${contents.length} válido(s)`);
+    }
+
+    this.analyzeProgress.set(80);
+    this.analyzeStatus.set('Detectando requisitos y tecnologías...');
+    setTimeout(() => {
+      this.analyzeProgress.set(100);
+      this.finishAnalysis(contents);
+    }, 600);
   }
 
   analyzeText() {
     const text = this.pastedText.trim();
     if (text.length < 50) { this.notifications.warning('El texto es muy corto'); return; }
     this.step.set('analyzing');
+    this.analyzeProgress.set(30);
     this.analyzeStatus.set('Analizando texto...');
-    setTimeout(() => { this.finishAnalysis([text]); }, 700);
+    setTimeout(() => {
+      this.analyzeProgress.set(80);
+      this.analyzeStatus.set('Detectando requisitos y tecnologías...');
+      setTimeout(() => { this.analyzeProgress.set(100); this.finishAnalysis([text]); }, 400);
+    }, 400);
   }
 
   private finishAnalysis(contents: string[]) {
@@ -482,40 +853,209 @@ export class PromptGeneratorComponent {
     this.projectInfo.set(info);
     this.editName = info.name;
     this.editType = info.type;
+    this.editTechs = [...info.technologies];
+    this.editReqs = info.requirements.map(r => ({ ...r, excluded: false }));
+    // Auto-detectar idioma del documento
+    const detectedLang = this.analyzer.detectLanguage(contents.join(' '));
+    if (detectedLang !== this.promptLang()) {
+      this.setPromptLang(detectedLang);
+      this.notifications.info(`Idioma detectado: ${detectedLang === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}`);
+    }
     this.step.set('analysis');
-    this.notifications.success('Análisis completado');
+    this.notifications.success(`Análisis completado — confianza ${info.confidence.level === 'high' ? 'alta' : info.confidence.level === 'medium' ? 'media' : 'baja'}`);
   }
+
+  addReq() {
+    const desc = this.newReq.trim();
+    if (!desc) return;
+    this.editReqs = [...this.editReqs, { id: `REQ-M-${Date.now()}`, description: desc, type: 'functional', priority: 'medium', excluded: false }];
+    this.newReq = '';
+  }
+
+  toggleReq(id: string) {
+    this.editReqs = this.editReqs.map(r => r.id === id ? { ...r, excluded: !r.excluded } : r);
+  }
+
+  addTech() {
+    const t = this.newTech.trim();
+    if (t && !this.editTechs.includes(t)) { this.editTechs = [...this.editTechs, t]; }
+    this.newTech = '';
+  }
+
+  removeTech(tech: string) { this.editTechs = this.editTechs.filter(t => t !== tech); }
 
   generatePrompt() {
     if (!this.projectInfo()) return;
-    const info: ProjectInfo = { ...this.projectInfo()!, name: this.editName || this.projectInfo()!.name, type: this.editType };
-    const prompt = this.promptGen.generatePrompt(info, this.parsedContents());
+    const activeReqs = this.editReqs
+      .filter(r => !r.excluded)
+      .map(({ excluded, ...r }) => r);
+    const info: ProjectInfo = {
+      ...this.projectInfo()!,
+      name: this.editName || this.projectInfo()!.name,
+      type: this.editType,
+      technologies: this.editTechs,
+      requirements: activeReqs
+    };
+    const prompt = this.promptGen.generatePrompt(
+      info,
+      this.parsedContents(),
+      this.promptLang(),
+      this.promptModel(),
+      this.tokenBudget()
+    );
     this.generatedPrompt.set(prompt);
     this.history.save(info.name, prompt);
     this.step.set('prompt');
+    this.titleSvc.set(`Prompt: ${info.name}`);
     this.notifications.success('Prompt generado y guardado');
   }
 
+  get wordCount() { return this.generatedPrompt()?.metadata.wordCount ?? 0; }
+  get tokenEstimate() { return Math.round(this.wordCount * 1.3); }
+  get tokenLevel(): 'green' | 'amber' | 'red' {
+    if (this.tokenEstimate < 4000) return 'green';
+    if (this.tokenEstimate < 8000) return 'amber';
+    return 'red';
+  }
+  get tokenWarning() { return this.tokenEstimate > 8000; }
+
+  get costEstimate(): { gpt4: string; claude: string; gemini: string } {
+    const tokens = this.tokenEstimate;
+    // Precios aproximados por 1K tokens (input+output estimado x3)
+    const total = tokens * 4; // input + output estimado
+    return {
+      gpt4:   `~$${((total / 1000) * 0.03).toFixed(3)}`,
+      claude: `~$${((total / 1000) * 0.015).toFixed(3)}`,
+      gemini: `~$${((total / 1000) * 0.00025).toFixed(4)}`
+    };
+  }
+
   async copyPrompt() {
+    if (!this.generatedPrompt() || this.copyDone()) return;
+    const ok = await this.clipboard.copyText(this.generatedPrompt()!.content, '');
+    if (ok) {
+      this.copyDone.set(true);
+      setTimeout(() => this.copyDone.set(false), 2000);
+    }
+  }
+
+  async sharePrompt() {
     if (!this.generatedPrompt()) return;
-    await navigator.clipboard.writeText(this.generatedPrompt()!.content);
-    this.notifications.success('Copiado al portapapeles');
+    try {
+      const id = await this.shareService.create(this.generatedPrompt()!.content);
+      const url = `${window.location.origin}/share/${id}`;
+      await this.clipboard.copyText(url, 'Enlace copiado — compártelo con quien quieras');
+    } catch { this.notifications.error('No se pudo generar el enlace'); }
+  }
+
+  // Short mode
+  generateShortPrompt() {
+    if (!this.projectInfo()) return;
+    const info: ProjectInfo = { ...this.projectInfo()!, name: this.editName || this.projectInfo()!.name, type: this.editType, technologies: this.editTechs };
+    const prompt = this.promptGen.generateShortPrompt(info, this.promptLang());
+    this.generatedPrompt.set(prompt);
+    this.shortMode.set(true);
+    this.history.save(info.name, prompt);
+    this.step.set('prompt');
+    this.titleSvc.set(`Prompt: ${info.name}`);
+    this.notifications.success('Prompt corto generado');
+  }
+
+  // Templates
+  saveTemplate() {
+    const name = this.templateName.trim();
+    if (!name || !this.editTechs.length) { this.notifications.warning('Ingresa un nombre y al menos una tecnología'); return; }
+    this.templateStore.save(name, this.editTechs, this.editType);
+    this.templateName = '';
+    this.showTemplates.set(false);
+    this.notifications.success('Plantilla guardada');
+  }
+
+  applyTemplate(t: { technologies: string[]; projectType: ProjectType }) {
+    this.editTechs = [...t.technologies];
+    this.editType = t.projectType;
+    this.showTemplates.set(false);
+    this.notifications.success('Plantilla aplicada');
+  }
+
+  applyStackSuggestion(techs: string[]) {
+    this.editTechs = [...new Set([...this.editTechs, ...techs])];
+    this.showStackSuggestions.set(false);
+    this.notifications.success('Stack aplicado');
+  }
+
+  readonly instructionPresets = [
+    { label: '🧪 Usar TDD', value: 'Implementa el proyecto usando Test-Driven Development (TDD). Incluye tests unitarios para cada función crítica.' },
+    { label: '🐳 Agregar Docker', value: 'Incluye Dockerfile y docker-compose.yml para containerizar la aplicación.' },
+    { label: '🔐 OAuth 2.0', value: 'Implementa autenticación con OAuth 2.0 (Google/GitHub). Incluye flujo completo de login social.' },
+    { label: '📱 Responsive', value: 'La UI debe ser completamente responsive y funcionar en móvil, tablet y desktop.' },
+    { label: '♿ Accesibilidad', value: 'Implementa accesibilidad WCAG 2.1 AA: aria-labels, navegación por teclado, contraste adecuado.' },
+    { label: '📊 Logging', value: 'Agrega logging estructurado con niveles (info, warn, error) en todos los endpoints y operaciones críticas.' },
+    { label: '🚀 CI/CD', value: 'Incluye configuración de GitHub Actions para CI/CD: lint, tests y deploy automático.' },
+    { label: '📖 Swagger', value: 'Documenta todos los endpoints con Swagger/OpenAPI. Incluye ejemplos de request/response.' },
+  ];
+
+  toggleInstruction(value: string) {
+    const current = this.extraInstructions();
+    if (current.includes(value)) {
+      this.extraInstructions.set(current.filter(i => i !== value));
+    } else {
+      this.extraInstructions.set([...current, value]);
+    }
+  }
+
+  isInstructionActive(value: string) { return this.extraInstructions().includes(value); }
+
+  // Colored sections — parse prompt into sections with colors
+  get coloredPrompt(): SafeHtml {
+    const content = this.generatedPrompt()?.content ?? '';
+    const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const colored = escaped
+      .replace(/(════+[^\n]+════+)/g, '<span class="ps-sep">$1</span>')
+      .replace(/(DOCUMENTACIÓN DEL PROYECTO|PROJECT DOCUMENTATION)/g, '<span class="ps-doc">$1</span>')
+      .replace(/(ANÁLISIS EXTRAÍDO|EXTRACTED ANALYSIS)/g, '<span class="ps-analysis">$1</span>')
+      .replace(/(INSTRUCCIONES DE GENERACIÓN|GENERATION INSTRUCTIONS)/g, '<span class="ps-instr">$1</span>')
+      .replace(/(ESTRUCTURA DE ARCHIVOS|FILE STRUCTURE)/g, '<span class="ps-struct">$1</span>')
+      .replace(/(ESPECIFICACIONES TÉCNICAS|TECHNICAL SPECIFICATIONS)/g, '<span class="ps-tech">$1</span>')
+      .replace(/(RESULTADO ESPERADO|EXPECTED RESULT)/g, '<span class="ps-result">$1</span>');
+    return this.sanitizer.bypassSecurityTrustHtml(colored);
+  }
+
+  // Debounced text input
+  onTextInput(value: string) {
+    this.pastedText = value;
+    clearTimeout(this.textDebounce);
+    this.textDebounce = setTimeout(() => this.textLength.set(value.length), 150);
   }
 
   downloadPrompt() {
     if (!this.generatedPrompt()) return;
+    const json = formatPromptJson({
+      projectName: this.editName || 'proyecto',
+      projectType: this.generatedPrompt()!.metadata.projectType,
+      generatedAt: this.generatedPrompt()!.metadata.generatedAt,
+      wordCount: this.generatedPrompt()!.metadata.wordCount,
+      documentCount: this.generatedPrompt()!.metadata.documentCount,
+      lang: this.promptLang(),
+      short: this.shortMode(),
+      prompt: this.generatedPrompt()!.content
+    });
+    const blob = new Blob([json], { type: 'application/json' });
     const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(new Blob([this.generatedPrompt()!.content], { type: 'text/markdown' })),
-      download: `prompt-${this.editName || 'proyecto'}.md`
+      href: URL.createObjectURL(blob),
+      download: `prompt-${(this.editName || 'proyecto').replace(/\s+/g, '-')}.json`
     });
     a.click(); URL.revokeObjectURL(a.href);
-    this.notifications.success('Descargado');
+    this.notifications.success('Descargado como .json');
   }
 
   reset() {
     this.step.set('upload'); this.uploadedFiles.set([]); this.parsedContents.set([]);
-    this.projectInfo.set(null); this.generatedPrompt.set(null);
+    this.projectInfo.set(null); this.generatedPrompt.set(null); this.copyDone.set(false);
     this.pastedText = ''; this.editName = ''; this.editType = 'other';
+    this.editTechs = []; this.editReqs = []; this.newTech = ''; this.newReq = '';
+    this.extraInstructions.set([]); this.showStackSuggestions.set(false);
+    this.titleSvc.set('Nuevo Prompt');
   }
 
   getFileIcon(name: string): string {
@@ -529,5 +1069,12 @@ export class PromptGeneratorComponent {
 
   typeLabel(type: string): string {
     return PROJECT_TYPES.find(t => t.value === type)?.label ?? type;
+  }
+
+  modelLabel(model: UiPromptModel): string {
+    if (model === 'gpt') return 'GPT';
+    if (model === 'claude') return 'Claude';
+    if (model === 'gemini') return 'Gemini';
+    return 'Auto';
   }
 }

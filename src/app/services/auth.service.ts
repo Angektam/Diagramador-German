@@ -1,5 +1,7 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 export interface User {
   id: string;
@@ -11,11 +13,15 @@ export interface User {
 export class AuthService {
   private currentUser = signal<User | null>(null);
   private isAuthenticated = signal<boolean>(false);
+  private readonly tokenKey = 'authToken';
 
   readonly user = this.currentUser.asReadonly();
   readonly isLoggedIn = this.isAuthenticated.asReadonly();
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private http: HttpClient
+  ) {
     this.checkAuthStatus();
   }
 
@@ -34,38 +40,21 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string): boolean {
-    // Usuarios demo - en producción esto sería una llamada al backend
-    const demoUsers = [
-      { id: '1', username: 'admin', password: 'admin123', email: 'admin@diagramador.com' },
-      { id: '2', username: 'usuario', password: '123456', email: 'usuario@diagramador.com' },
-      { id: '3', username: 'demo', password: 'demo', email: 'demo@diagramador.com' }
-    ];
+  async login(username: string, password: string): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ token: string; user: User }>('/api/auth/login', { username, password })
+      );
 
-    // Usuarios registrados en localStorage
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-
-    const user = [...demoUsers, ...registeredUsers].find(
-      (u: any) => u.username === username && u.password === password
-    );
-    
-    if (user) {
-      const userData: User = {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      };
-      
-      this.currentUser.set(userData);
+      this.currentUser.set(response.user);
       this.isAuthenticated.set(true);
-      
-      localStorage.setItem('currentUser', JSON.stringify(userData));
+      localStorage.setItem('currentUser', JSON.stringify(response.user));
       localStorage.setItem('isLoggedIn', 'true');
-      
+      localStorage.setItem(this.tokenKey, response.token);
       return true;
+    } catch {
+      return false;
     }
-    
-    return false;
   }
 
   logout() {
@@ -74,28 +63,19 @@ export class AuthService {
     
     localStorage.removeItem('currentUser');
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem(this.tokenKey);
     
     this.router.navigate(['/login']);
   }
 
-  register(username: string, email: string, password: string): boolean {
-    // Simulación de registro - en producción sería una llamada al backend
-    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    
-    if (existingUsers.find((u: any) => u.username === username)) {
-      return false; // Usuario ya existe
+  async register(username: string, email: string, password: string): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post('/api/auth/register', { username, email, password })
+      );
+      return true;
+    } catch {
+      return false;
     }
-
-    const newUser = {
-      id: Date.now().toString(),
-      username,
-      email,
-      password
-    };
-
-    existingUsers.push(newUser);
-    localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-    
-    return true;
   }
 }

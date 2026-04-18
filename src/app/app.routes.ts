@@ -17,6 +17,17 @@ export const routes: Routes = [
     loadComponent: () => import('./components/prompt-generator/prompt-generator.component').then(m => m.PromptGeneratorComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'share',
+    loadComponent: () => import('./components/share-view/share-view.component').then(m => m.ShareViewComponent)
+  },
+  {
+    path: 'share/:id',
+    loadComponent: () => import('./components/share-view/share-view.component').then(m => m.ShareViewComponent)
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-  { path: '**', redirectTo: '/dashboard' }
+  {
+    path: '**',
+    loadComponent: () => import('./components/not-found/not-found.component').then(m => m.NotFoundComponent)
+  }
 ];

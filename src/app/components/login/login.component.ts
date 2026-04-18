@@ -797,7 +797,7 @@ export class LoginComponent {
     }
   }
 
-  onLogin() {
+  async onLogin() {
     // Validación de campos vacíos
     if (!this.loginData.username || !this.loginData.password) {
       this.notifications.error('Por favor completa todos los campos');
@@ -823,23 +823,17 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-
-    // Simular delay de red
-    setTimeout(() => {
-      const success = this.authService.login(this.loginData.username.trim(), this.loginData.password);
-      
-      if (success) {
-        this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.notifications.error('Usuario o contraseña incorrectos');
-      }
-      
-      this.isLoading.set(false);
-    }, 1000);
+    const success = await this.authService.login(this.loginData.username.trim(), this.loginData.password);
+    if (success) {
+      this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
+      this.router.navigate(['/dashboard']);
+    } else {
+      this.notifications.error('Usuario o contraseña incorrectos');
+    }
+    this.isLoading.set(false);
   }
 
-  onRegister() {
+  async onRegister() {
     // Validación de campos vacíos
     if (!this.registerData.username || !this.registerData.email || !this.registerData.password) {
       this.notifications.error('Por favor completa todos los campos');
@@ -890,29 +884,23 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
+    const username = this.registerData.username.trim();
+    const email = this.registerData.email.trim().toLowerCase();
+    const password = this.registerData.password;
 
-    setTimeout(() => {
-      const username = this.registerData.username.trim();
-      const email = this.registerData.email.trim().toLowerCase();
-      const password = this.registerData.password;
-
-      const success = this.authService.register(
-        username,
-        email,
-        password
-      );
-      
-      if (success) {
-        // Auto‑login y redirección al generador
-        this.authService.login(username, password);
+    const success = await this.authService.register(username, email, password);
+    if (success) {
+      const loggedIn = await this.authService.login(username, password);
+      if (loggedIn) {
         this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
         this.registerData = { username: '', email: '', password: '' };
         this.router.navigate(['/dashboard']);
       } else {
-        this.notifications.error('El usuario ya existe');
+        this.notifications.warning('Cuenta creada, pero no se pudo iniciar sesión automáticamente');
       }
-      
-      this.isLoading.set(false);
-    }, 1000);
+    } else {
+      this.notifications.error('No se pudo crear la cuenta (usuario existente o servidor no disponible)');
+    }
+    this.isLoading.set(false);
   }
 }

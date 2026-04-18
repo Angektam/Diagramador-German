@@ -1,0 +1,374 @@
+{
+  "project": "PromptGen",
+  "version": "2.0.0",
+  "auditDate": "2026-03-28",
+  "framework": "Angular 18.2 (standalone)",
+  "summary": {
+    "totalFiles": 20,
+    "diagnosticErrors": 0,
+    "diagnosticWarnings": 0,
+    "status": "PASS"
+  },
+  "diagnostics": {
+    "result": "ALL CLEAR — 0 errores, 0 warnings en todos los archivos",
+    "filesChecked": [
+      "src/main.ts",
+      "src/app/app.component.ts",
+      "src/app/app.routes.ts",
+      "src/app/app.config.ts",
+      "src/app/guards/auth.guard.ts",
+      "src/app/models/project-info.interface.ts",
+      "src/app/models/prompt-template.interface.ts",
+      "src/app/services/auth.service.ts",
+      "src/app/services/notification.service.ts",
+      "src/app/services/file-parser.service.ts",
+      "src/app/services/prompt-history.service.ts",
+      "src/app/services/document-analyzer.service.ts",
+      "src/app/services/prompt-generator.service.ts",
+      "src/app/components/login/login.component.ts",
+      "src/app/components/dashboard/dashboard.component.ts",
+      "src/app/components/prompt-generator/prompt-generator.component.ts",
+      "src/app/components/notification-container/notification-container.component.ts",
+      "src/app/components/not-found/not-found.component.ts",
+      "shared/models/diagram.interface.ts",
+      "backend/src/index.ts"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/main.ts",
+      "type": "entrypoint",
+      "description": "Bootstrap de la aplicación Angular standalone",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/app.component.ts",
+      "type": "component",
+      "description": "Componente raíz. Contiene router-outlet y notification-container",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/app.routes.ts",
+      "type": "routing",
+      "description": "Rutas lazy-loaded: /login, /dashboard, /generator, 404",
+      "errors": [],
+      "warnings": [],
+      "routes": [
+        { "path": "login",     "guard": "loginGuard",  "component": "LoginComponent" },
+        { "path": "dashboard", "guard": "authGuard",   "component": "DashboardComponent" },
+        { "path": "generator", "guard": "authGuard",   "component": "PromptGeneratorComponent" },
+        { "path": "",          "guard": null,           "redirectTo": "/dashboard" },
+        { "path": "**",        "guard": null,           "component": "NotFoundComponent" }
+      ],
+      "notes": "OK — 404 real implementado"
+    },
+    {
+      "path": "src/app/app.config.ts",
+      "type": "config",
+      "description": "Providers: ZoneChangeDetection, Animations, Router, HttpClient",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/guards/auth.guard.ts",
+      "type": "guard",
+      "description": "authGuard: redirige a /login si no autenticado. loginGuard: redirige a /dashboard si ya autenticado",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/models/project-info.interface.ts",
+      "type": "model",
+      "description": "Interfaces: ProjectInfo, ProjectType (9 tipos), Requirement, Feature, ArchitectureSuggestion, ComponentSuggestion",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/models/prompt-template.interface.ts",
+      "type": "model",
+      "description": "Interfaces: PromptTemplate, PromptSection, GeneratedPrompt",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/services/auth.service.ts",
+      "type": "service",
+      "description": "Autenticación con signals. Login/register/logout. Persistencia en localStorage.",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "medium",
+          "type": "security",
+          "description": "Contraseñas de usuarios demo hardcodeadas en texto plano en el código fuente",
+          "recommendation": "Mover a variables de entorno o usar backend real con bcrypt"
+        },
+        {
+          "severity": "low",
+          "type": "security",
+          "description": "btoa() no es hashing real — es solo encoding base64, reversible",
+          "recommendation": "En producción usar bcrypt en el backend. btoa es solo para demo"
+        },
+        {
+          "severity": "low",
+          "type": "unused-import",
+          "description": "'computed' importado pero no usado",
+          "recommendation": "Eliminar import de 'computed'"
+        }
+      ],
+      "notes": "Funcional para demo. No apto para producción sin backend real"
+    },
+    {
+      "path": "src/app/services/notification.service.ts",
+      "type": "service",
+      "description": "Toast notifications con signal. Métodos: show, success, error, warning, info, dismiss, clear",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/services/file-parser.service.ts",
+      "type": "service",
+      "description": "Parser de archivos: PDF (pdfjs-dist), DOCX (ZIP nativo + DecompressionStream), DOC (binary strings), TXT/MD (FileReader)",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "low",
+          "type": "compatibility",
+          "description": "DecompressionStream no disponible en Safari < 16.4 ni Firefox < 113",
+          "recommendation": "Agregar polyfill o detectar soporte y mostrar advertencia al usuario"
+        },
+        {
+          "severity": "low",
+          "type": "limitation",
+          "description": "DOCX con compresión method != 0 y != 8 (ej: method=9 bzip2) no se parsea",
+          "recommendation": "Agregar fallback con mensaje de error descriptivo"
+        }
+      ],
+      "notes": "Funcional para la mayoría de casos. DOCX deflate funciona en Chrome/Edge/Firefox 113+"
+    },
+    {
+      "path": "src/app/services/prompt-history.service.ts",
+      "type": "service",
+      "description": "Historial de prompts en localStorage. Métodos: save, delete, rename, clear, import. Máx 20 entradas.",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK"
+    },
+    {
+      "path": "src/app/services/document-analyzer.service.ts",
+      "type": "service",
+      "description": "Análisis de documentos: detecta tipo de proyecto (9 tipos), tecnologías (25), requisitos (hasta 25), features (hasta 15), arquitectura sugerida",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "low",
+          "type": "logic",
+          "description": "La detección de tipo de proyecto usa first-match — si el texto menciona 'api' y 'ecommerce', gana 'ecommerce' por orden de checks",
+          "recommendation": "Usar scoring por cantidad de keywords encontradas en lugar de first-match"
+        }
+      ],
+      "notes": "Funcional. Detección heurística, no ML"
+    },
+    {
+      "path": "src/app/services/prompt-generator.service.ts",
+      "type": "service",
+      "description": "Genera prompts estructurados en español e inglés. Soporta 9 tipos de proyecto con specs técnicas específicas.",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK — soporte bilingüe implementado"
+    },
+    {
+      "path": "src/app/components/login/login.component.ts",
+      "type": "component",
+      "description": "Login/Register con tabs, validación, indicador de fortaleza de contraseña, usuarios demo, animaciones",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "low",
+          "type": "ux",
+          "description": "El link '¿Olvidaste tu contraseña?' apunta a href='#' — no funciona",
+          "recommendation": "Implementar flujo de recuperación o deshabilitar el link"
+        }
+      ],
+      "notes": "OK — validación robusta implementada"
+    },
+    {
+      "path": "src/app/components/dashboard/dashboard.component.ts",
+      "type": "component",
+      "description": "Dashboard con historial de prompts. Funciones: buscar, expandir, copiar, descargar, renombrar, eliminar, exportar JSON, importar JSON",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK — computed signals, importar/exportar implementados"
+    },
+    {
+      "path": "src/app/components/prompt-generator/prompt-generator.component.ts",
+      "type": "component",
+      "description": "Generador multi-step: upload → analyzing (con progreso) → analysis (editable) → prompt. Soporta archivos y texto. Selector de idioma. Advertencia de tokens.",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK — barra de progreso, edición de tecnologías, idioma, feedback visual en copiar"
+    },
+    {
+      "path": "src/app/components/notification-container/notification-container.component.ts",
+      "type": "component",
+      "description": "Toast notifications con animación de entrada y salida (slide in/out)",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK — animación de salida implementada"
+    },
+    {
+      "path": "src/app/components/not-found/not-found.component.ts",
+      "type": "component",
+      "description": "Página 404 con botón de regreso al dashboard",
+      "errors": [],
+      "warnings": [],
+      "notes": "OK — nuevo"
+    },
+    {
+      "path": "shared/models/diagram.interface.ts",
+      "type": "model",
+      "description": "Interfaces compartidas frontend/backend: Table, Column, Relationship, Diagram, DiagramMetadata",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "info",
+          "type": "unused",
+          "description": "Estas interfaces son del módulo 'diagramador' pero el frontend actual es 'PromptGen'. No se usan en ningún componente.",
+          "recommendation": "Evaluar si se van a usar o eliminar para reducir ruido"
+        }
+      ],
+      "notes": "Sin errores. Posiblemente código legacy"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "type": "backend",
+      "description": "Express server mínimo. Solo health check y placeholder /api",
+      "errors": [],
+      "warnings": [],
+      "issues": [
+        {
+          "severity": "high",
+          "type": "incomplete",
+          "description": "Backend es un stub — no tiene rutas reales, ni auth, ni base de datos",
+          "recommendation": "Implementar: auth routes (POST /api/auth/login, /register), prompts CRUD, middleware de JWT"
+        }
+      ],
+      "notes": "Funcional como servidor básico. No integrado con el frontend"
+    }
+  ],
+  "issuesSummary": {
+    "high": 1,
+    "medium": 1,
+    "low": 7,
+    "info": 1,
+    "total": 10
+  },
+  "issuesByCategory": {
+    "security": [
+      "auth.service.ts — contraseñas demo hardcodeadas",
+      "auth.service.ts — btoa() no es hashing real"
+    ],
+    "incomplete": [
+      "backend/src/index.ts — backend sin implementar"
+    ],
+    "ux": [
+      "login.component.ts — link 'Olvidaste contraseña' no funciona"
+    ],
+    "compatibility": [
+      "file-parser.service.ts — DecompressionStream no disponible en Safari < 16.4"
+    ],
+    "logic": [
+      "document-analyzer.service.ts — detección de tipo usa first-match en lugar de scoring"
+    ],
+    "unused": [
+      "auth.service.ts — import 'computed' no usado",
+      "shared/models/diagram.interface.ts — interfaces no usadas en el frontend actual"
+    ]
+  },
+  "features": {
+    "implemented": [
+      "Autenticación (login/register) con localStorage",
+      "Guard de rutas (authGuard, loginGuard)",
+      "Generación de prompts multi-step",
+      "Soporte de archivos: PDF, DOCX, DOC, TXT, MD",
+      "Análisis de documentos (tipo, tecnologías, requisitos, features)",
+      "Historial de prompts (localStorage, máx 20)",
+      "Buscar en historial",
+      "Copiar prompt al portapapeles con feedback visual",
+      "Descargar prompt como .md",
+      "Renombrar proyectos inline",
+      "Exportar historial como JSON",
+      "Importar historial desde JSON (deduplicación)",
+      "Selector de idioma del prompt (ES/EN)",
+      "Edición de tecnologías detectadas",
+      "Barra de progreso real durante análisis",
+      "Advertencia de tokens si prompt > 6000 palabras",
+      "Toast notifications con animación entrada/salida",
+      "Página 404 real",
+      "Modo de input persistido en localStorage",
+      "Preferencia de idioma persistida en localStorage"
+    ],
+    "missing": [
+      "Backend real con base de datos",
+      "Autenticación JWT real",
+      "Recuperación de contraseña",
+      "Modo claro/oscuro",
+      "Atajos de teclado",
+      "Edición de requisitos detectados",
+      "Paginación del historial (actualmente carga todo)",
+      "Tests unitarios (0 archivos de test)",
+      "PWA manifest / service worker (iconos existen pero no hay manifest.json)",
+      "Internacionalización (i18n) — UI solo en español"
+    ]
+  },
+  "dependencies": {
+    "frontend": {
+      "angular": "^18.2.0",
+      "pdfjs-dist": "^5.5.207",
+      "rxjs": "~7.8.0",
+      "zone.js": "~0.14.10"
+    },
+    "backend": {
+      "express": "^4.18.2",
+      "cors": "^2.8.5",
+      "dotenv": "^16.3.1",
+      "jsonwebtoken": "^9.0.2",
+      "bcryptjs": "^2.4.3"
+    }
+  },
+  "recommendations": [
+    {
+      "priority": 1,
+      "action": "Eliminar import 'computed' no usado en auth.service.ts"
+    },
+    {
+      "priority": 2,
+      "action": "Implementar flujo de recuperación de contraseña o remover el link"
+    },
+    {
+      "priority": 3,
+      "action": "Agregar detección de soporte para DecompressionStream con mensaje de error amigable"
+    },
+    {
+      "priority": 4,
+      "action": "Cambiar detección de tipo de proyecto a sistema de scoring por keywords"
+    },
+    {
+      "priority": 5,
+      "action": "Implementar backend real: auth JWT + CRUD de prompts + PostgreSQL"
+    }
+  ]
+}

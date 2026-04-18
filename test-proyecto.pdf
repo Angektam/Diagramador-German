@@ -1,0 +1,72 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]
+   /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+
+4 0 obj
+<< /Length 1234 >>
+stream
+BT
+/F1 14 Tf
+50 750 Td
+(Sistema de Gestion de Inventario - TiendaApp) Tj
+0 -28 Td
+/F1 11 Tf
+(Descripcion: Aplicacion web para gestionar el inventario de una tienda online.) Tj
+0 -22 Td
+(El sistema debe permitir registrar productos con nombre, precio y stock.) Tj
+0 -22 Td
+(El sistema debe permitir buscar productos por nombre o categoria.) Tj
+0 -22 Td
+(El sistema debe generar alertas cuando el stock sea menor a 5 unidades.) Tj
+0 -22 Td
+(El sistema debe generar reportes de ventas mensuales.) Tj
+0 -22 Td
+(El usuario debe poder iniciar sesion con usuario y contrasena.) Tj
+0 -22 Td
+(El administrador debe poder agregar, editar y eliminar productos.) Tj
+0 -22 Td
+(Tecnologias: React, Node.js, PostgreSQL, Express, TypeScript, Prisma.) Tj
+0 -22 Td
+(La aplicacion debe ser responsive y funcionar en movil y desktop.) Tj
+0 -22 Td
+(Requisitos no funcionales: tiempo de respuesta menor a 2 segundos.) Tj
+0 -22 Td
+(Seguridad: autenticacion JWT, validacion de entradas, HTTPS obligatorio.) Tj
+0 -22 Td
+(Base de datos: tablas productos, usuarios, ventas, categorias, pedidos.) Tj
+0 -22 Td
+(Modulo de reportes: exportar a CSV y PDF, filtrar por fecha y categoria.) Tj
+0 -22 Td
+(El sistema debe soportar hasta 1000 usuarios concurrentes.) Tj
+ET
+endstream
+endobj
+
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000059 00000 n 
+0000000117 00000 n 
+0000000247 00000 n 
+0000001534 00000 n 
+
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1605
+%%EOF

@@ -3,8 +3,10 @@
   "version": "2.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
+    "lint": "tsc -p tsconfig.app.json --noEmit",
+    "test": "ng test --watch=false --browsers=ChromeHeadless",
     "watch": "ng build --watch --configuration development",
     "generate-prompt": "npx ts-node scripts/generate-prompt.ts",
     "test-prompt": "npm run generate-prompt && echo Prompt generado exitosamente"
@@ -28,7 +30,14 @@
     "@angular-devkit/build-angular": "^18.2.0",
     "@angular/cli": "^18.2.0",
     "@angular/compiler-cli": "^18.2.0",
+    "@types/jasmine": "^6.0.0",
     "@types/node": "^22.0.0",
+    "jasmine-core": "^6.2.0",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-coverage": "^2.2.1",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.2.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.5.0"
   }

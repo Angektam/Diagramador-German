@@ -1,26 +1,208 @@
 import { Injectable } from '@angular/core';
 import { ProjectInfo, ProjectType } from '../models/project-info.interface';
-import { GeneratedPrompt } from '../models/prompt-template.interface';
+import { GeneratedPrompt, PromptTargetModel } from '../models/prompt-template.interface';
 
 @Injectable({ providedIn: 'root' })
 export class PromptGeneratorService {
 
-  generatePrompt(projectInfo: ProjectInfo, documents: string[]): GeneratedPrompt {
+  generatePrompt(
+    projectInfo: ProjectInfo,
+    documents: string[],
+    lang: 'es' | 'en' = 'es',
+    targetModel: PromptTargetModel = 'auto',
+    tokenBudget = 1200
+  ): GeneratedPrompt {
+    const safeBudget = Math.max(600, Math.min(8000, tokenBudget));
+    const normalizedInfo = this.normalizeInfo(projectInfo, safeBudget);
     const rawDocs = documents.join('\n\n---\n\n');
-    const content = this.buildFullPrompt(projectInfo, rawDocs);
+    const resolvedModel = this.resolveModel(targetModel, rawDocs.length);
+    const limitedDocs = this.limitDocsForModel(rawDocs, resolvedModel, safeBudget);
+    const content = lang === 'en'
+      ? this.buildFullPromptEn(normalizedInfo, limitedDocs, resolvedModel)
+      : this.buildFullPrompt(normalizedInfo, limitedDocs, resolvedModel);
 
     return {
       content,
       metadata: {
-        projectType: projectInfo.type,
+        projectType: normalizedInfo.type,
         generatedAt: new Date(),
         documentCount: documents.length,
-        wordCount: content.split(/\s+/).length
+        wordCount: content.split(/\s+/).length,
+        targetModel: resolvedModel,
+        targetTokenBudget: safeBudget
       }
     };
   }
 
-  private buildFullPrompt(info: ProjectInfo, rawDocs: string): string {
+  generateShortPrompt(projectInfo: ProjectInfo, lang: 'es' | 'en' = 'es'): GeneratedPrompt {
+    const content = lang === 'en' ? this.buildShortPromptEn(projectInfo) : this.buildShortPrompt(projectInfo);
+    return {
+      content,
+      metadata: { projectType: projectInfo.type, generatedAt: new Date(), documentCount: 0, wordCount: content.split(/\s+/).length }
+    };
+  }
+
+  private buildShortPrompt(info: ProjectInfo): string {
+    const stack = this.getStack(info);
+    const techList = info.technologies.length > 0 ? info.technologies.join(', ') : stack.join(', ');
+    const reqs = info.requirements.slice(0, 10).map(r => `- ${r.description}`).join('\n') || '- (ver documentación)';
+    return `Eres un experto desarrollador. Genera el código COMPLETO y FUNCIONAL del siguiente proyecto:
+
+Nombre: ${info.name}
+Tipo: ${this.getTypeLabel(info.type)}
+Stack: ${techList}
+
+REQUISITOS PRINCIPALES:
+${reqs}
+
+INSTRUCCIONES:
+- Genera TODOS los archivos necesarios con código completo (sin placeholders)
+- Sigue principios SOLID y clean code
+- Incluye package.json, configuración y README.md
+- El proyecto debe ejecutarse con un solo comando
+
+Comienza con package.json o equivalente.`;
+  }
+
+  private buildShortPromptEn(info: ProjectInfo): string {
+    const stack = this.getStack(info);
+    const techList = info.technologies.length > 0 ? info.technologies.join(', ') : stack.join(', ');
+    const reqs = info.requirements.slice(0, 10).map(r => `- ${r.description}`).join('\n') || '- (see documentation)';
+    return `You are an expert developer. Generate COMPLETE and FUNCTIONAL code for the following project:
+
+Name: ${info.name}
+Type: ${this.getTypeLabel(info.type)}
+Stack: ${techList}
+
+MAIN REQUIREMENTS:
+${reqs}
+
+INSTRUCTIONS:
+- Generate ALL necessary files with complete code (no placeholders)
+- Follow SOLID principles and clean code
+- Include package.json, config files and README.md
+- Project must run with a single command
+
+Start with package.json or equivalent.`;
+  }
+
+  private buildFullPromptEn(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>): string {
+    const stack = this.getStack(info);
+    const folderTree = info.architecture?.folderStructure ?? this.getDefaultFolderTree(info.type);
+    const fileList = this.getFileList(info);
+    const reqList = this.buildRequirementsListEn(info);
+    const featureList = this.buildFeaturesListEn(info);
+    const techList = info.technologies.length > 0 ? info.technologies.join(', ') : stack.join(', ');
+
+    return `You are an expert software developer. Your task is to generate COMPLETE and FUNCTIONAL source code for a software project based on the provided documentation.
+
+MODEL TARGET: ${this.modelLabel(model)}
+${this.buildModelGuidance(model, 'en')}
+
+════════════════════════════════════════════════════════════
+PROJECT DOCUMENTATION
+════════════════════════════════════════════════════════════
+
+${rawDocs}
+
+════════════════════════════════════════════════════════════
+EXTRACTED ANALYSIS
+════════════════════════════════════════════════════════════
+
+Project name: ${info.name}
+Type: ${this.getTypeLabel(info.type)}
+Tech stack: ${techList}
+
+IDENTIFIED REQUIREMENTS:
+${reqList}
+
+FEATURES:
+${featureList}
+
+════════════════════════════════════════════════════════════
+GENERATION INSTRUCTIONS
+════════════════════════════════════════════════════════════
+
+Generate the complete project following EXACTLY this format for each file:
+
+### FILE: <path/to/file>
+\`\`\`<language>
+<complete file content>
+\`\`\`
+
+MANDATORY RULES:
+1. Generate ALL necessary files, without omitting any
+2. Each file must have COMPLETE and FUNCTIONAL code, no skeletons or placeholders
+3. Include explanatory comments in complex logic
+4. Implement error handling at all critical points
+5. Validate all user inputs
+6. Follow SOLID principles and clean code
+7. The project must run with startup commands without modifications
+
+════════════════════════════════════════════════════════════
+FILE STRUCTURE TO GENERATE
+════════════════════════════════════════════════════════════
+
+\`\`\`
+${folderTree}
+\`\`\`
+
+Required files:
+${fileList}
+
+════════════════════════════════════════════════════════════
+TECHNICAL SPECIFICATIONS
+════════════════════════════════════════════════════════════
+
+${this.buildTechSpecs(info)}
+
+════════════════════════════════════════════════════════════
+REQUIRED CONFIGURATION FILES
+════════════════════════════════════════════════════════════
+
+${this.buildConfigFiles(info)}
+
+════════════════════════════════════════════════════════════
+GENERATION ORDER
+════════════════════════════════════════════════════════════
+
+Generate files in this order:
+1. package.json / pom.xml / requirements.txt (dependencies)
+2. Configuration files (tsconfig, .env.example, etc.)
+3. Models, interfaces / entities
+4. Services / repositories / use cases
+5. Controllers / UI components
+6. Routes / navigation
+7. Main entry point (main, index, app)
+8. README.md with complete instructions
+
+════════════════════════════════════════════════════════════
+EXPECTED RESULT
+════════════════════════════════════════════════════════════
+
+When finished, the project must:
+- Compile without errors
+- Run with a single command (npm start / python manage.py runserver / etc.)
+- Implement ALL listed features
+- Have a functional and usable UI (if applicable)
+- Include sample / seed data for demonstration
+
+START NOW with the package.json or equivalent file.`;
+  }
+
+  private buildRequirementsListEn(info: ProjectInfo): string {
+    if (info.requirements.length === 0) return '- (Extract from provided documentation)';
+    return info.requirements
+      .map(r => `- [${r.type === 'functional' ? 'F' : 'NF'}] ${r.description}`)
+      .join('\n');
+  }
+
+  private buildFeaturesListEn(info: ProjectInfo): string {
+    if (info.features.length === 0) return '- (Extract from provided documentation)';
+    return info.features.map(f => `- ${f.description}`).join('\n');
+  }
+
+  private buildFullPrompt(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>): string {
     const stack = this.getStack(info);
     const folderTree = info.architecture?.folderStructure ?? this.getDefaultFolderTree(info.type);
     const fileList = this.getFileList(info);
@@ -32,11 +214,14 @@ export class PromptGeneratorService {
 
     return `Eres un experto desarrollador de software. Tu tarea es generar el código fuente COMPLETO y FUNCIONAL de un proyecto de software basándote en la documentación proporcionada.
 
+MODELO OBJETIVO: ${this.modelLabel(model)}
+${this.buildModelGuidance(model, 'es')}
+
 ════════════════════════════════════════════════════════════
 DOCUMENTACIÓN DEL PROYECTO
 ════════════════════════════════════════════════════════════
 
-${rawDocs.length > 12000 ? rawDocs.substring(0, 12000) + '\n\n[... documentación adicional truncada por longitud ...]' : rawDocs}
+${rawDocs}
 
 ════════════════════════════════════════════════════════════
 ANÁLISIS EXTRAÍDO
@@ -458,5 +643,72 @@ Config: package.json x2, prisma/schema.prisma, README.md`,
       'other': 'Aplicación'
     };
     return labels[type] ?? 'Aplicación';
+  }
+
+  private resolveModel(model: PromptTargetModel, docsLength: number): Exclude<PromptTargetModel, 'auto'> {
+    if (model !== 'auto') return model;
+    if (docsLength > 18000) return 'claude';
+    if (docsLength > 12000) return 'gemini';
+    return 'gpt';
+  }
+
+  private modelDocLimit(model: Exclude<PromptTargetModel, 'auto'>): number {
+    if (model === 'claude') return 22000;
+    if (model === 'gemini') return 16000;
+    return 12000;
+  }
+
+  private limitDocsForModel(rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>, tokenBudget: number): string {
+    const budgetChars = Math.round(tokenBudget * 3.6);
+    const limit = Math.min(this.modelDocLimit(model), budgetChars);
+    if (rawDocs.length <= limit) return rawDocs;
+    return `${rawDocs.substring(0, limit)}\n\n[... documentación truncada automáticamente para ${this.modelLabel(model)} ...]`;
+  }
+
+  private normalizeInfo(info: ProjectInfo, tokenBudget: number): ProjectInfo {
+    const seenReq = new Set<string>();
+    const normalizedReqs = info.requirements.filter(r => {
+      const key = r.description.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 120);
+      if (seenReq.has(key)) return false;
+      seenReq.add(key);
+      return true;
+    });
+
+    const seenFeat = new Set<string>();
+    const normalizedFeatures = info.features.filter(f => {
+      const key = f.description.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 120);
+      if (seenFeat.has(key)) return false;
+      seenFeat.add(key);
+      return true;
+    });
+
+    const maxReqs = Math.max(6, Math.min(25, Math.floor(tokenBudget / 120)));
+    const maxFeatures = Math.max(4, Math.min(15, Math.floor(tokenBudget / 200)));
+
+    return {
+      ...info,
+      requirements: normalizedReqs.slice(0, maxReqs),
+      features: normalizedFeatures.slice(0, maxFeatures)
+    };
+  }
+
+  private modelLabel(model: Exclude<PromptTargetModel, 'auto'>): string {
+    if (model === 'gpt') return 'GPT';
+    if (model === 'claude') return 'Claude';
+    return 'Gemini';
+  }
+
+  private buildModelGuidance(model: Exclude<PromptTargetModel, 'auto'>, lang: 'es' | 'en'): string {
+    const mapEs: Record<Exclude<PromptTargetModel, 'auto'>, string> = {
+      gpt: 'Optimiza para respuestas claras, formato estricto por archivo y bloques de código compactos.',
+      claude: 'Aprovecha contexto largo, explicaciones concisas por bloque y trazabilidad de requisitos.',
+      gemini: 'Prioriza estructura modular, pasos de implementación y consistencia entre frontend/backend.'
+    };
+    const mapEn: Record<Exclude<PromptTargetModel, 'auto'>, string> = {
+      gpt: 'Optimize for concise output, strict file-by-file formatting and compact code blocks.',
+      claude: 'Leverage long context, brief rationale per block and requirement traceability.',
+      gemini: 'Prioritize modular structure, implementation steps and frontend/backend consistency.'
+    };
+    return lang === 'en' ? mapEn[model] : mapEs[model];
   }
 }
