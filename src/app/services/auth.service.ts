@@ -1,7 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 
 export interface User {
   id: string;
@@ -13,69 +11,57 @@ export interface User {
 export class AuthService {
   private currentUser = signal<User | null>(null);
   private isAuthenticated = signal<boolean>(false);
-  private readonly tokenKey = 'authToken';
 
   readonly user = this.currentUser.asReadonly();
   readonly isLoggedIn = this.isAuthenticated.asReadonly();
 
-  constructor(
-    private router: Router,
-    private http: HttpClient
-  ) {
+  constructor(private router: Router) {
     this.checkAuthStatus();
   }
 
   private checkAuthStatus() {
     const userData = localStorage.getItem('currentUser');
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    
     if (userData && isLoggedIn) {
       try {
-        const user = JSON.parse(userData);
-        this.currentUser.set(user);
+        this.currentUser.set(JSON.parse(userData));
         this.isAuthenticated.set(true);
-      } catch {
-        this.logout();
-      }
+      } catch { this.logout(); }
     }
   }
 
-  async login(username: string, password: string): Promise<boolean> {
-    try {
-      const response = await firstValueFrom(
-        this.http.post<{ token: string; user: User }>('/api/auth/login', { username, password })
-      );
-
-      this.currentUser.set(response.user);
-      this.isAuthenticated.set(true);
-      localStorage.setItem('currentUser', JSON.stringify(response.user));
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem(this.tokenKey, response.token);
-      return true;
-    } catch {
-      return false;
-    }
+  login(username: string, password: string): boolean {
+    const demoUsers = [
+      { id: '1', username: 'admin',   password: 'admin123', email: 'admin@promptgen.com' },
+      { id: '2', username: 'usuario', password: '123456',   email: 'usuario@promptgen.com' },
+      { id: '3', username: 'demo',    password: 'demo',     email: 'demo@promptgen.com' },
+    ];
+    const registered = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const found = [...demoUsers, ...registered].find(
+      (u: any) => u.username === username && (u.password === password || u.password === btoa(password))
+    );
+    if (!found) return false;
+    const userData: User = { id: found.id, username: found.username, email: found.email };
+    this.currentUser.set(userData);
+    this.isAuthenticated.set(true);
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    localStorage.setItem('isLoggedIn', 'true');
+    return true;
   }
 
   logout() {
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
-    
     localStorage.removeItem('currentUser');
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem(this.tokenKey);
-    
     this.router.navigate(['/login']);
   }
 
-  async register(username: string, email: string, password: string): Promise<boolean> {
-    try {
-      await firstValueFrom(
-        this.http.post('/api/auth/register', { username, email, password })
-      );
-      return true;
-    } catch {
-      return false;
-    }
+  register(username: string, email: string, password: string): boolean {
+    const existing = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    if (existing.find((u: any) => u.username === username)) return false;
+    existing.push({ id: Date.now().toString(), username, email, password: btoa(password) });
+    localStorage.setItem('registeredUsers', JSON.stringify(existing));
+    return true;
   }
 }
