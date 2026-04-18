@@ -29,11 +29,7 @@ export class DocumentAnalyzerService {
       requirements: this.extractRequirements(combined),
       features: this.extractFeatures(combined),
       architecture: this.suggestArchitecture(type),
-      confidence: {
-        score,
-        level: score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low',
-        detail
-      },
+      confidence: { score, level: score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low', detail },
       stackSuggestions: this.getStackSuggestions(type)
     };
   }
@@ -75,7 +71,6 @@ export class DocumentAnalyzerService {
       ['cms',           ['cms', 'gestor de contenido', 'blog', 'wordpress', 'publicaciones', 'artículo', 'editorial']],
       ['web-app',       ['aplicación web', 'web app', 'spa', 'frontend', 'react', 'angular', 'vue', 'página web', 'sitio web', 'portal']],
     ];
-    // Scoring: gana el tipo con más keywords encontradas
     let bestType: ProjectType = 'other';
     let bestScore = 0;
     for (const [type, keywords] of checks) {
@@ -133,18 +128,12 @@ export class DocumentAnalyzerService {
     const reqs: Requirement[] = [];
     const seen = new Set<string>();
     let id = 1;
-
     const patterns = [
-      // Explícitos
       /(?:debe(?:rá)?|should|necesita|requiere|tiene que|es necesario que)\s+(.{15,150})/gi,
-      // Listas con viñetas o números
       /^[\s]*(?:\d+\.|[-*•])\s+(.{15,150})/gm,
-      // Funcionalidades
       /(?:funcionalidad|módulo|característica|feature)\s*[:\-]\s*(.{10,120})/gi,
-      // El sistema / la app
       /(?:el sistema|la aplicación|la plataforma|el usuario)\s+(?:debe|podrá|permitirá|tendrá)\s+(.{10,120})/gi,
     ];
-
     for (const pattern of patterns) {
       let m: RegExpExecArray | null;
       while ((m = pattern.exec(text)) !== null) {
@@ -152,12 +141,7 @@ export class DocumentAnalyzerService {
         const key = desc.toLowerCase().slice(0, 40);
         if (desc.length > 10 && !seen.has(key)) {
           seen.add(key);
-          reqs.push({
-            id: `REQ-${id++}`,
-            type: this.classifyReq(desc),
-            description: desc,
-            priority: this.priorityOf(desc)
-          });
+          reqs.push({ id: `REQ-${id++}`, type: this.classifyReq(desc), description: desc, priority: this.priorityOf(desc) });
         }
       }
     }
@@ -213,7 +197,6 @@ export class DocumentAnalyzerService {
     };
     return map[type];
   }
-}
 
   private generateSummary(text: string, type: ProjectType): string {
     const name = this.extractProjectName(text);
