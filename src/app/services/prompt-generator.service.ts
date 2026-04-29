@@ -10,7 +10,8 @@ export class PromptGeneratorService {
     documents: string[],
     lang: 'es' | 'en' = 'es',
     targetModel: PromptTargetModel = 'auto',
-    tokenBudget = 1200
+    tokenBudget = 1200,
+    extraInstructions: string[] = []
   ): GeneratedPrompt {
     const safeBudget = Math.max(600, Math.min(8000, tokenBudget));
     const normalizedInfo = this.normalizeInfo(projectInfo, safeBudget);
@@ -18,8 +19,8 @@ export class PromptGeneratorService {
     const resolvedModel = this.resolveModel(targetModel, rawDocs.length);
     const limitedDocs = this.limitDocsForModel(rawDocs, resolvedModel, safeBudget);
     const content = lang === 'en'
-      ? this.buildFullPromptEn(normalizedInfo, limitedDocs, resolvedModel)
-      : this.buildFullPrompt(normalizedInfo, limitedDocs, resolvedModel);
+      ? this.buildFullPromptEn(normalizedInfo, limitedDocs, resolvedModel, extraInstructions)
+      : this.buildFullPrompt(normalizedInfo, limitedDocs, resolvedModel, extraInstructions);
 
     return {
       content,
@@ -86,7 +87,7 @@ INSTRUCTIONS:
 Start with package.json or equivalent.`;
   }
 
-  private buildFullPromptEn(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>): string {
+  private buildFullPromptEn(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>, extraInstructions: string[] = []): string {
     const stack = this.getStack(info);
     const folderTree = info.architecture?.folderStructure ?? this.getDefaultFolderTree(info.type);
     const fileList = this.getFileList(info);
@@ -130,15 +131,39 @@ Generate the complete project following EXACTLY this format for each file:
 <complete file content>
 \`\`\`
 
-MANDATORY RULES:
+MANDATORY CODE RULES:
 1. Generate ALL necessary files, without omitting any
-2. Each file must have COMPLETE and FUNCTIONAL code, no skeletons or placeholders
-3. Include explanatory comments in complex logic
-4. Implement error handling at all critical points
-5. Validate all user inputs
-6. Follow SOLID principles and clean code
-7. The project must run with startup commands without modifications
+2. Each file must have COMPLETE and FUNCTIONAL code — NO "// TODO", "// ...", or placeholders
+3. Include JSDoc/docstring comments on public functions explaining what they do, parameters, and return values
+4. Implement error handling with try/catch on async operations, input validation, and proper HTTP status codes (400, 401, 404, 500)
+5. Validate ALL user inputs: length, type, format, dangerous characters (XSS/SQL injection)
+6. Follow SOLID principles: single responsibility per class/function, dependency injection, interfaces for abstractions
+7. Use strict typing — NO \`any\`. Define interfaces/types for all objects
+8. Implement structured logging with levels (info, warn, error) on critical operations
+9. Environment variables in .env.example with sample values — NEVER hardcode secrets
+10. The project must compile and run with a single command without modifications
 
+REQUIRED DESIGN PATTERNS:
+${this.getDesignPatterns(info.type)}
+
+════════════════════════════════════════════════════════════
+SECURITY
+════════════════════════════════════════════════════════════
+
+${this.getSecurityRequirements(info.type)}
+
+════════════════════════════════════════════════════════════
+DATABASE
+════════════════════════════════════════════════════════════
+
+${this.getDatabaseRequirements(info.type)}
+
+${extraInstructions.length > 0 ? `════════════════════════════════════════════════════════════
+ADDITIONAL USER INSTRUCTIONS
+════════════════════════════════════════════════════════════
+
+${extraInstructions.map((inst, i) => \`\${i + 1}. \${inst}\`).join('\\n')}
+` : ''}
 ════════════════════════════════════════════════════════════
 FILE STRUCTURE TO GENERATE
 ════════════════════════════════════════════════════════════
@@ -202,7 +227,7 @@ START NOW with the package.json or equivalent file.`;
     return info.features.map(f => `- ${f.description}`).join('\n');
   }
 
-  private buildFullPrompt(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>): string {
+  private buildFullPrompt(info: ProjectInfo, rawDocs: string, model: Exclude<PromptTargetModel, 'auto'>, extraInstructions: string[] = []): string {
     const stack = this.getStack(info);
     const folderTree = info.architecture?.folderStructure ?? this.getDefaultFolderTree(info.type);
     const fileList = this.getFileList(info);
@@ -248,15 +273,39 @@ Genera el proyecto completo siguiendo EXACTAMENTE este formato para cada archivo
 <contenido completo del archivo>
 \`\`\`
 
-REGLAS OBLIGATORIAS:
+REGLAS OBLIGATORIAS DE CÓDIGO:
 1. Genera TODOS los archivos necesarios, sin omitir ninguno
-2. Cada archivo debe tener código COMPLETO y FUNCIONAL, no esqueletos ni placeholders
-3. Incluye comentarios explicativos en la lógica compleja
-4. Implementa manejo de errores en todos los puntos críticos
-5. Valida todas las entradas de usuario
-6. Sigue los principios SOLID y clean code
-7. El proyecto debe poder ejecutarse con los comandos de inicio sin modificaciones
+2. Cada archivo debe tener código COMPLETO y FUNCIONAL — NO uses "// TODO", "// ...", ni placeholders
+3. Incluye comentarios JSDoc/docstrings en funciones públicas explicando qué hacen, parámetros y retorno
+4. Implementa manejo de errores con try/catch en operaciones async, validación de inputs, y respuestas HTTP con códigos correctos (400, 401, 404, 500)
+5. Valida TODAS las entradas de usuario: longitud, tipo, formato, caracteres peligrosos (XSS/SQL injection)
+6. Sigue principios SOLID: una responsabilidad por clase/función, inyección de dependencias, interfaces para abstracciones
+7. Usa tipado estricto — NO uses \`any\`. Define interfaces/types para todos los objetos
+8. Implementa logging con niveles (info, warn, error) en operaciones críticas
+9. Variables de entorno en .env.example con valores de ejemplo — NUNCA hardcodees secrets
+10. El proyecto debe compilar y ejecutarse con un solo comando sin modificaciones
 
+PATRONES DE DISEÑO REQUERIDOS:
+${this.getDesignPatterns(info.type)}
+
+════════════════════════════════════════════════════════════
+SEGURIDAD
+════════════════════════════════════════════════════════════
+
+${this.getSecurityRequirements(info.type)}
+
+════════════════════════════════════════════════════════════
+BASE DE DATOS
+════════════════════════════════════════════════════════════
+
+${this.getDatabaseRequirements(info.type)}
+
+${extraInstructions.length > 0 ? `════════════════════════════════════════════════════════════
+INSTRUCCIONES ADICIONALES DEL USUARIO
+════════════════════════════════════════════════════════════
+
+${extraInstructions.map((inst, i) => \`\${i + 1}. \${inst}\`).join('\\n')}
+` : ''}
 ════════════════════════════════════════════════════════════
 ESTRUCTURA DE ARCHIVOS A GENERAR
 ════════════════════════════════════════════════════════════
@@ -710,5 +759,85 @@ Config: package.json x2, prisma/schema.prisma, README.md`,
       gemini: 'Prioritize modular structure, implementation steps and frontend/backend consistency.'
     };
     return lang === 'en' ? mapEn[model] : mapEs[model];
+  }
+
+  private getDesignPatterns(type: ProjectType): string {
+    const patterns: Record<ProjectType, string> = {
+      'web-app': `- Repository Pattern para acceso a datos
+- Service Layer para lógica de negocio separada de controladores
+- Component Pattern: componentes pequeños, reutilizables, con una sola responsabilidad
+- Custom Hooks/Services para lógica compartida entre componentes
+- Error Boundary para manejo de errores en UI`,
+      'api': `- Repository Pattern: separar queries de lógica de negocio
+- Service Layer: controladores delgados, servicios con la lógica
+- DTO Pattern: objetos de transferencia para validar input/output
+- Middleware Pattern: auth, validation, error handling como middleware
+- Factory Pattern para crear instancias complejas`,
+      'ecommerce': `- Repository Pattern para productos, pedidos, usuarios
+- Strategy Pattern para métodos de pago
+- Observer Pattern para notificaciones de stock/pedidos
+- State Pattern para estados del pedido (pending, paid, shipped, delivered)
+- Facade Pattern para simplificar el checkout`,
+      'mobile-app': `- MVVM: separar vista, lógica y datos
+- Repository Pattern para acceso a API y cache local
+- Observer Pattern para estado reactivo
+- Adapter Pattern para normalizar respuestas de API`,
+      'dashboard': `- Observer Pattern para datos en tiempo real
+- Strategy Pattern para diferentes tipos de gráficas
+- Composite Pattern para widgets configurables
+- Cache Pattern para datos de API con TTL`,
+      'microservices': `- API Gateway Pattern
+- Circuit Breaker para resiliencia
+- Event-Driven con message queue
+- Database per Service
+- Saga Pattern para transacciones distribuidas`,
+      'desktop-app': `- MVC/MVVM para separar UI de lógica
+- Command Pattern para undo/redo
+- Observer Pattern para estado reactivo`,
+      'cms': `- Plugin Architecture para extensibilidad
+- Template Pattern para renderizado
+- Strategy Pattern para diferentes tipos de contenido`,
+      'other': `- Service Layer para separar lógica de negocio
+- Repository Pattern para acceso a datos
+- Factory Pattern para crear instancias`
+    };
+    return patterns[type] ?? patterns['other'];
+  }
+
+  private getSecurityRequirements(type: ProjectType): string {
+    const base = `- Sanitizar TODAS las entradas de usuario (prevenir XSS)
+- Usar consultas parametrizadas (prevenir SQL injection)
+- Implementar rate limiting en endpoints públicos
+- Headers de seguridad: CORS restrictivo, Content-Security-Policy, X-Frame-Options
+- Contraseñas: hash con bcrypt (mínimo 10 rounds), NUNCA almacenar en texto plano
+- Variables sensibles en .env, NUNCA en el código fuente`;
+
+    if (type === 'api' || type === 'ecommerce') {
+      return base + `\n- JWT con expiración corta (15min) + refresh token (7 días)
+- Validar y sanitizar body, params y query en cada endpoint
+- Implementar RBAC (Role-Based Access Control) si hay roles de usuario
+- Logging de intentos de login fallidos`;
+    }
+    if (type === 'web-app' || type === 'dashboard') {
+      return base + `\n- Proteger rutas con guards de autenticación
+- Escapar contenido dinámico en templates (prevenir XSS)
+- Usar HttpOnly cookies para tokens si es posible`;
+    }
+    return base;
+  }
+
+  private getDatabaseRequirements(type: ProjectType): string {
+    if (type === 'mobile-app' || type === 'desktop-app') {
+      return `- Usar almacenamiento local (SQLite, AsyncStorage, Hive)
+- Implementar migraciones para cambios de esquema
+- Cache de datos de API con TTL configurable`;
+    }
+    return `- Definir esquema completo con todas las tablas/colecciones necesarias
+- Incluir relaciones (foreign keys) entre entidades
+- Agregar índices en campos de búsqueda frecuente
+- Implementar migraciones (Prisma migrate, TypeORM migrations, o SQL puro)
+- Incluir seed data con al menos 5 registros de ejemplo por tabla
+- Timestamps automáticos: createdAt, updatedAt en todas las tablas
+- Soft delete donde aplique (campo deletedAt en lugar de borrar)`;
   }
 }

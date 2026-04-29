@@ -903,7 +903,8 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
       this.parsedContents(),
       this.promptLang(),
       this.promptModel(),
-      this.tokenBudget()
+      this.tokenBudget(),
+      this.extraInstructions()
     );
     this.generatedPrompt.set(prompt);
     this.history.save(info.name, prompt);
