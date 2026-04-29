@@ -138,7 +138,7 @@ MANDATORY CODE RULES:
 4. Implement error handling with try/catch on async operations, input validation, and proper HTTP status codes (400, 401, 404, 500)
 5. Validate ALL user inputs: length, type, format, dangerous characters (XSS/SQL injection)
 6. Follow SOLID principles: single responsibility per class/function, dependency injection, interfaces for abstractions
-7. Use strict typing — NO \`any\`. Define interfaces/types for all objects
+7. Use strict typing — NO "any". Define interfaces/types for all objects
 8. Implement structured logging with levels (info, warn, error) on critical operations
 9. Environment variables in .env.example with sample values — NEVER hardcode secrets
 10. The project must compile and run with a single command without modifications
@@ -158,12 +158,7 @@ DATABASE
 
 ${this.getDatabaseRequirements(info.type)}
 
-${extraInstructions.length > 0 ? `════════════════════════════════════════════════════════════
-ADDITIONAL USER INSTRUCTIONS
-════════════════════════════════════════════════════════════
-
-${extraInstructions.map((inst, i) => \`\${i + 1}. \${inst}\`).join('\\n')}
-` : ''}
+${extraInstructions.length > 0 ? this.formatExtraInstructionsEn(extraInstructions) : ''}
 ════════════════════════════════════════════════════════════
 FILE STRUCTURE TO GENERATE
 ════════════════════════════════════════════════════════════
@@ -280,7 +275,7 @@ REGLAS OBLIGATORIAS DE CÓDIGO:
 4. Implementa manejo de errores con try/catch en operaciones async, validación de inputs, y respuestas HTTP con códigos correctos (400, 401, 404, 500)
 5. Valida TODAS las entradas de usuario: longitud, tipo, formato, caracteres peligrosos (XSS/SQL injection)
 6. Sigue principios SOLID: una responsabilidad por clase/función, inyección de dependencias, interfaces para abstracciones
-7. Usa tipado estricto — NO uses \`any\`. Define interfaces/types para todos los objetos
+7. Usa tipado estricto — NO uses "any". Define interfaces/types para todos los objetos
 8. Implementa logging con niveles (info, warn, error) en operaciones críticas
 9. Variables de entorno en .env.example con valores de ejemplo — NUNCA hardcodees secrets
 10. El proyecto debe compilar y ejecutarse con un solo comando sin modificaciones
@@ -300,12 +295,7 @@ BASE DE DATOS
 
 ${this.getDatabaseRequirements(info.type)}
 
-${extraInstructions.length > 0 ? `════════════════════════════════════════════════════════════
-INSTRUCCIONES ADICIONALES DEL USUARIO
-════════════════════════════════════════════════════════════
-
-${extraInstructions.map((inst, i) => \`\${i + 1}. \${inst}\`).join('\\n')}
-` : ''}
+${extraInstructions.length > 0 ? this.formatExtraInstructionsEs(extraInstructions) : ''}
 ════════════════════════════════════════════════════════════
 ESTRUCTURA DE ARCHIVOS A GENERAR
 ════════════════════════════════════════════════════════════
@@ -759,6 +749,18 @@ Config: package.json x2, prisma/schema.prisma, README.md`,
       gemini: 'Prioritize modular structure, implementation steps and frontend/backend consistency.'
     };
     return lang === 'en' ? mapEn[model] : mapEs[model];
+  }
+
+  private formatExtraInstructionsEn(instructions: string[]): string {
+    const sep = '════════════════════════════════════════════════════════════';
+    const numbered = instructions.map((inst, i) => (i + 1) + '. ' + inst).join('\n');
+    return sep + '\nADDITIONAL USER INSTRUCTIONS\n' + sep + '\n\n' + numbered + '\n';
+  }
+
+  private formatExtraInstructionsEs(instructions: string[]): string {
+    const sep = '════════════════════════════════════════════════════════════';
+    const numbered = instructions.map((inst, i) => (i + 1) + '. ' + inst).join('\n');
+    return sep + '\nINSTRUCCIONES ADICIONALES DEL USUARIO\n' + sep + '\n\n' + numbered + '\n';
   }
 
   private getDesignPatterns(type: ProjectType): string {
