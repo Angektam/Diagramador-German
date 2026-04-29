@@ -797,25 +797,19 @@ export class LoginComponent {
     }
   }
 
-  async onLogin() {
-    // Validación de campos vacíos
+  onLogin() {
     if (!this.loginData.username || !this.loginData.password) {
       this.notifications.error('Por favor completa todos los campos');
       return;
     }
-
-    // Validación de longitud mínima
     if (this.loginData.username.trim().length < 3) {
       this.notifications.error('El usuario debe tener al menos 3 caracteres');
       return;
     }
-
     if (this.loginData.password.length < 4) {
       this.notifications.error('La contraseña debe tener al menos 4 caracteres');
       return;
     }
-
-    // Validación de caracteres especiales peligrosos
     const dangerousChars = /[<>\"\']/;
     if (dangerousChars.test(this.loginData.username) || dangerousChars.test(this.loginData.password)) {
       this.notifications.error('Los campos contienen caracteres no permitidos');
@@ -823,62 +817,52 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-    const success = await this.authService.login(this.loginData.username.trim(), this.loginData.password);
-    if (success) {
-      this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
-      this.router.navigate(['/dashboard']);
-    } else {
-      this.notifications.error('Usuario o contraseña incorrectos');
-    }
-    this.isLoading.set(false);
+    // Breve delay para feedback visual del spinner
+    setTimeout(() => {
+      const success = this.authService.login(this.loginData.username.trim(), this.loginData.password);
+      if (success) {
+        this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
+        this.router.navigate(['/dashboard']);
+      } else {
+        this.notifications.error('Usuario o contraseña incorrectos');
+      }
+      this.isLoading.set(false);
+    }, 500);
   }
 
-  async onRegister() {
-    // Validación de campos vacíos
+  onRegister() {
     if (!this.registerData.username || !this.registerData.email || !this.registerData.password) {
       this.notifications.error('Por favor completa todos los campos');
       return;
     }
-
-    // Validación de longitud de usuario
     if (this.registerData.username.trim().length < 3) {
       this.notifications.error('El usuario debe tener al menos 3 caracteres');
       return;
     }
-
     if (this.registerData.username.trim().length > 50) {
       this.notifications.error('El usuario no puede exceder 50 caracteres');
       return;
     }
-
-    // Validación de formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.registerData.email.trim())) {
       this.notifications.error('Por favor ingresa un email válido');
       return;
     }
-
-    // Validación de longitud de contraseña
     if (this.registerData.password.length < 6) {
       this.notifications.error('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-
     if (this.registerData.password.length > 100) {
       this.notifications.error('La contraseña no puede exceder 100 caracteres');
       return;
     }
-
-    // Validación de caracteres especiales peligrosos
     const dangerousChars = /[<>\"\']/;
-    if (dangerousChars.test(this.registerData.username) || 
-        dangerousChars.test(this.registerData.email) || 
+    if (dangerousChars.test(this.registerData.username) ||
+        dangerousChars.test(this.registerData.email) ||
         dangerousChars.test(this.registerData.password)) {
       this.notifications.error('Los campos contienen caracteres no permitidos');
       return;
     }
-
-    // Validación de fortaleza de contraseña
     if (this.getPasswordStrength() === 'weak') {
       this.notifications.warning('Tu contraseña es débil. Considera usar una más fuerte.');
     }
@@ -888,19 +872,21 @@ export class LoginComponent {
     const email = this.registerData.email.trim().toLowerCase();
     const password = this.registerData.password;
 
-    const success = await this.authService.register(username, email, password);
-    if (success) {
-      const loggedIn = await this.authService.login(username, password);
-      if (loggedIn) {
-        this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
-        this.registerData = { username: '', email: '', password: '' };
-        this.router.navigate(['/dashboard']);
+    setTimeout(() => {
+      const success = this.authService.register(username, email, password);
+      if (success) {
+        const loggedIn = this.authService.login(username, password);
+        if (loggedIn) {
+          this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
+          this.registerData = { username: '', email: '', password: '' };
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.notifications.warning('Cuenta creada. Inicia sesión manualmente.');
+        }
       } else {
-        this.notifications.warning('Cuenta creada, pero no se pudo iniciar sesión automáticamente');
+        this.notifications.error('El usuario ya existe');
       }
-    } else {
-      this.notifications.error('No se pudo crear la cuenta (usuario existente o servidor no disponible)');
-    }
-    this.isLoading.set(false);
+      this.isLoading.set(false);
+    }, 500);
   }
 }
