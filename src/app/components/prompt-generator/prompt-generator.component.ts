@@ -300,30 +300,29 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
             </div>
           </div>
 
-          <div class="action-row">
-            <button class="btn-secondary" (click)="reset()">← Volver</button>
-            <div class="lang-selector">
-              <span class="lang-label">Idioma del prompt:</span>
-              <button class="lang-btn" [class.active]="promptLang() === 'es'" (click)="setPromptLang('es')">🇪🇸 Español</button>
-              <button class="lang-btn" [class.active]="promptLang() === 'en'" (click)="setPromptLang('en')">🇺🇸 English</button>
+          <div class="action-area">
+            <!-- Fila 1: Opciones -->
+            <div class="options-row">
+              <div class="lang-selector">
+                <span class="lang-label">Idioma:</span>
+                <button class="lang-btn" [class.active]="promptLang() === 'es'" (click)="setPromptLang('es')">🇪🇸 ES</button>
+                <button class="lang-btn" [class.active]="promptLang() === 'en'" (click)="setPromptLang('en')">🇺🇸 EN</button>
+              </div>
+              <div class="lang-selector">
+                <span class="lang-label">Modelo:</span>
+                <button class="lang-btn" [class.active]="promptModel() === 'auto'" (click)="setPromptModel('auto')">Auto</button>
+                <button class="lang-btn" [class.active]="promptModel() === 'gpt'" (click)="setPromptModel('gpt')">GPT</button>
+                <button class="lang-btn" [class.active]="promptModel() === 'claude'" (click)="setPromptModel('claude')">Claude</button>
+                <button class="lang-btn" [class.active]="promptModel() === 'gemini'" (click)="setPromptModel('gemini')">Gemini</button>
+              </div>
             </div>
-            <div class="lang-selector">
-              <span class="lang-label">Modelo:</span>
-              <button class="lang-btn" [class.active]="promptModel() === 'auto'" (click)="setPromptModel('auto')">Auto</button>
-              <button class="lang-btn" [class.active]="promptModel() === 'gpt'" (click)="setPromptModel('gpt')">GPT</button>
-              <button class="lang-btn" [class.active]="promptModel() === 'claude'" (click)="setPromptModel('claude')">Claude</button>
-              <button class="lang-btn" [class.active]="promptModel() === 'gemini'" (click)="setPromptModel('gemini')">Gemini</button>
+            <!-- Fila 2: Acciones -->
+            <div class="action-row">
+              <button class="btn-secondary" (click)="reset()">← Volver</button>
+              <button class="btn-secondary" (click)="showTemplates.set(!showTemplates())">📋 Plantillas</button>
+              <button class="btn-secondary" (click)="generateShortPrompt()">⚡ Prompt corto</button>
+              <button class="btn-primary" (click)="generatePrompt()">✨ Generar Prompt</button>
             </div>
-            <div class="lang-selector">
-              <span class="lang-label">Tokens máx:</span>
-              <button class="lang-btn" [class.active]="tokenBudget() === 800" (click)="setTokenBudget(800)">800</button>
-              <button class="lang-btn" [class.active]="tokenBudget() === 1200" (click)="setTokenBudget(1200)">1200</button>
-              <button class="lang-btn" [class.active]="tokenBudget() === 2000" (click)="setTokenBudget(2000)">2000</button>
-              <button class="lang-btn" [class.active]="tokenBudget() === 3500" (click)="setTokenBudget(3500)">3500</button>
-            </div>
-            <button class="btn-secondary" (click)="showTemplates.set(!showTemplates())" title="Plantillas guardadas">📋 Plantillas</button>
-            <button class="btn-secondary" (click)="generateShortPrompt()" title="Prompt corto para modelos con contexto limitado">⚡ Prompt corto</button>
-            <button class="btn-primary" (click)="generatePrompt()">✨ Generar Prompt</button>
           </div>
 
           <!-- Templates panel -->
@@ -537,7 +536,7 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .btn-add-tech:hover:not(:disabled) { background: var(--c-accent); color: #fff; }
     .btn-add-tech:disabled { opacity: .4; cursor: not-allowed; }
     .req-list, .feat-list { display: flex; flex-direction: column; gap: 8px; }
-    .req-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--c-text-2); line-height: 1.5; }
+    .req-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--c-text-2); line-height: 1.5; padding: 6px 0; }
     .req-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
     .req-badge.functional { background: var(--c-green-bg); color: var(--c-green); }
     .req-badge.non-functional { background: var(--c-amber-bg); color: var(--c-amber); }
@@ -545,7 +544,7 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .req-priority.high { background: var(--c-red-bg); color: var(--c-red); }
     .req-priority.medium { background: var(--c-amber-bg); color: var(--c-amber); }
     .req-priority.low { background: var(--c-green-bg); color: var(--c-green); }
-    .feat-item { font-size: 13px; color: var(--c-text-2); padding: 8px 12px; background: var(--c-bg); border-radius: 8px; border-left: 3px solid var(--c-accent-bd); }
+    .feat-item { font-size: 13px; color: var(--c-text-2); padding: 8px 12px; background: var(--c-bg); border-radius: 8px; border-left: 3px solid var(--c-accent-bd); word-break: break-word; }
     .more { font-size: 12px; color: var(--c-text-3); font-style: italic; }
 
     /* TIP / WARN */
@@ -578,8 +577,10 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .link-btn { background: none; border: none; font-size: 13px; color: var(--c-accent); cursor: pointer; padding: 0; font-weight: 500; }
     .link-btn:hover { text-decoration: underline; }
     /* Lang selector */
-    .lang-selector { display: flex; align-items: center; gap: 6px; margin-right: auto; }
-    .lang-label { font-size: 12px; color: var(--c-text-3); }
+    .action-area { display: flex; flex-direction: column; gap: 12px; }
+    .options-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; }
+    .lang-selector { display: flex; align-items: center; gap: 6px; }
+    .lang-label { font-size: 12px; color: var(--c-text-3); font-weight: 600; }
     .lang-btn { padding: 6px 12px; border: 1.5px solid var(--c-border); background: var(--c-bg); border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--c-text-2); cursor: pointer; transition: all var(--t); }
     .lang-btn:hover { border-color: var(--c-accent-bd); color: var(--c-accent); }
     .lang-btn.active { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); font-weight: 600; }
@@ -591,10 +592,11 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .token-amber { border-color: #f59e0b !important; color: #d97706 !important; }
     .token-red   { border-color: #ef4444 !important; color: #dc2626 !important; }
     /* Req excluded */
-    .req-item.excluded { opacity: .4; text-decoration: line-through; }
-    .req-desc { flex: 1; }
-    .req-toggle { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--c-text-3); padding: 0 4px; flex-shrink: 0; }
-    .req-toggle:hover { color: var(--c-red); }
+    .req-item.excluded { opacity: .4; }
+    .req-item.excluded .req-desc { text-decoration: line-through; }
+    .req-desc { flex: 1; word-break: break-word; overflow-wrap: anywhere; max-height: 3em; overflow: hidden; }
+    .req-toggle { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--c-text-3); padding: 2px 6px; flex-shrink: 0; border-radius: 4px; }
+    .req-toggle:hover { color: var(--c-red); background: var(--c-red-bg); }
     /* Char progress */
     .char-progress-wrap { height: 3px; background: var(--c-border); border-radius: 99px; overflow: hidden; margin: 4px 0; }
     .char-progress-bar { height: 100%; background: linear-gradient(90deg, var(--c-accent), var(--c-accent-3)); border-radius: 99px; transition: width .2s, background .2s; }

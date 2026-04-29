@@ -137,15 +137,25 @@ export class DocumentAnalyzerService {
     for (const pattern of patterns) {
       let m: RegExpExecArray | null;
       while ((m = pattern.exec(text)) !== null) {
-        const desc = m[1].trim().replace(/[.;,]+$/, '');
-        const key = desc.toLowerCase().slice(0, 40);
-        if (desc.length > 10 && !seen.has(key)) {
+        let desc = m[1].trim().replace(/[.;,]+$/, '');
+        // Limitar a 120 caracteres y cortar en punto o espacio
+        if (desc.length > 120) {
+          const cut = desc.lastIndexOf(' ', 120);
+          desc = desc.slice(0, cut > 60 ? cut : 120) + '...';
+        }
+        const key = desc.toLowerCase().slice(0, 50);
+        // Evitar duplicados por similitud
+        const isDuplicate = Array.from(seen).some(s => {
+          const overlap = s.slice(0, 30);
+          return key.startsWith(overlap) || overlap.startsWith(key.slice(0, 30));
+        });
+        if (desc.length > 10 && !isDuplicate) {
           seen.add(key);
           reqs.push({ id: `REQ-${id++}`, type: this.classifyReq(desc), description: desc, priority: this.priorityOf(desc) });
         }
       }
     }
-    return reqs.slice(0, 25);
+    return reqs.slice(0, 15);
   }
 
   private classifyReq(text: string): 'functional' | 'non-functional' {
@@ -164,23 +174,25 @@ export class DocumentAnalyzerService {
     const features: Feature[] = [];
     const seen = new Set<string>();
     const patterns = [
-      /(?:funcionalidad|feature|módulo|sección)\s*[:\-]\s*([^\n.]{10,100})/gi,
-      /(?:el sistema|la app|la aplicación)\s+(?:debe|deberá|permitirá|tendrá que)\s+([^\n.]{10,100})/gi,
-      /(?:gestión|administración|control|registro|búsqueda|generación|visualización)\s+(?:de\s+)?([^\n.,]{5,60})/gi,
+      /(?:funcionalidad|feature|módulo|sección)\s*[:\-]\s*([^\n.]{10,80})/gi,
+      /(?:el sistema|la app|la aplicación)\s+(?:debe|deberá|permitirá|tendrá que)\s+([^\n.]{10,80})/gi,
+      /(?:gestión|administración|control|registro|búsqueda|generación|visualización)\s+(?:de\s+)?([^\n.,]{5,50})/gi,
     ];
     let i = 1;
     for (const p of patterns) {
       let m: RegExpExecArray | null;
       while ((m = p.exec(text)) !== null) {
-        const desc = m[1].trim();
-        const key = desc.toLowerCase().slice(0, 30);
-        if (desc.length > 8 && !seen.has(key)) {
+        let desc = m[1].trim();
+        if (desc.length > 80) desc = desc.slice(0, 80) + '...';
+        const key = desc.toLowerCase().slice(0, 25);
+        const isDuplicate = Array.from(seen).some(s => key.startsWith(s) || s.startsWith(key));
+        if (desc.length > 8 && !isDuplicate) {
           seen.add(key);
           features.push({ name: `Feature ${i++}`, description: desc, components: [] });
         }
       }
     }
-    return features.slice(0, 15);
+    return features.slice(0, 10);
   }
 
   private suggestArchitecture(type: ProjectType): any {
