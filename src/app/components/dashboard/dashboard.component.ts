@@ -8,7 +8,7 @@ import { PromptHistoryService, HistoryEntry, SortField } from '../../services/pr
 import { NotificationService } from '../../services/notification.service';
 import { ThemeService } from '../../services/theme.service';
 import { TitleService } from '../../services/title.service';
-import { formatPromptJson, formatExportJson } from '../../utils/json-formatter';
+import { formatExportJson } from '../../utils/json-formatter';
 import { ShareService } from '../../services/share.service';
 import { ClipboardService } from '../../services/clipboard.service';
 
@@ -777,24 +777,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   downloadEntry(entry: HistoryEntry) {
-    const json = formatPromptJson({
-      id: entry.id,
-      projectName: entry.projectName,
-      projectType: entry.projectType,
-      generatedAt: entry.generatedAt,
-      wordCount: entry.wordCount,
-      documentCount: entry.documentCount,
-      tags: entry.tags,
-      prompt: entry.prompt
-    });
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([entry.prompt], { type: 'text/markdown;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(blob),
-      download: `prompt-${entry.projectName.replace(/\s+/g, '-')}.json`
+      download: `prompt-${entry.projectName.replace(/\s+/g, '-')}.md`
     });
     a.click();
     URL.revokeObjectURL(a.href);
-    this.notifications.success('Descargado como .json');
+    this.notifications.success('Descargado como .md');
   }
 
   deleteEntry(id: string) {

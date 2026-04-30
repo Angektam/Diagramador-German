@@ -14,7 +14,6 @@ import { TitleService } from '../../services/title.service';
 import { TemplateStoreService } from '../../services/template-store.service';
 import { ShareService } from '../../services/share.service';
 import { ClipboardService } from '../../services/clipboard.service';
-import { formatPromptJson } from '../../utils/json-formatter';
 import { ProjectInfo, ProjectType } from '../../models/project-info.interface';
 import { GeneratedPrompt, PromptTargetModel } from '../../models/prompt-template.interface';
 
@@ -410,7 +409,7 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
           <div class="action-row">
             <button class="btn-secondary" (click)="goToDashboard()">🗂️ Ver Proyectos</button>
             <button class="btn-secondary" (click)="reset()">🔄 Nuevo</button>
-            <button class="btn-secondary" (click)="downloadPrompt()">💾 Descargar .json</button>
+            <button class="btn-secondary" (click)="downloadPrompt()">💾 Descargar .md</button>
             <button class="btn-secondary" (click)="sharePrompt()">🔗 Compartir</button>
             <button class="btn-primary" [class.btn-copied]="copyDone()" (click)="copyPrompt()">
               {{ copyDone() ? '✓ Copiado' : '📋 Copiar Prompt' }}
@@ -1033,23 +1032,14 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
 
   downloadPrompt() {
     if (!this.generatedPrompt()) return;
-    const json = formatPromptJson({
-      projectName: this.editName || 'proyecto',
-      projectType: this.generatedPrompt()!.metadata.projectType,
-      generatedAt: this.generatedPrompt()!.metadata.generatedAt,
-      wordCount: this.generatedPrompt()!.metadata.wordCount,
-      documentCount: this.generatedPrompt()!.metadata.documentCount,
-      lang: this.promptLang(),
-      short: this.shortMode(),
-      prompt: this.generatedPrompt()!.content
-    });
-    const blob = new Blob([json], { type: 'application/json' });
+    const content = this.generatedPrompt()!.content;
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(blob),
-      download: `prompt-${(this.editName || 'proyecto').replace(/\s+/g, '-')}.json`
+      download: `prompt-${(this.editName || 'proyecto').replace(/\s+/g, '-')}.md`
     });
     a.click(); URL.revokeObjectURL(a.href);
-    this.notifications.success('Descargado como .json');
+    this.notifications.success('Descargado como .md');
   }
 
   reset() {
