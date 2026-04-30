@@ -1,6 +1,7 @@
 /**
  * Genera un JSON bien estructurado y legible para un prompt individual.
  * El prompt se divide en secciones detectadas automáticamente.
+ * Los textos largos se representan como arrays de líneas para legibilidad.
  */
 export function formatPromptJson(entry: {
   id?: string;
@@ -21,7 +22,7 @@ export function formatPromptJson(entry: {
     _info: {
       generator: 'PromptGen v2.0',
       exportedAt: new Date().toISOString(),
-      format: 'promptgen-v1'
+      format: 'promptgen-v2'
     },
     metadata: {
       ...(entry.id ? { id: entry.id } : {}),
@@ -39,8 +40,11 @@ export function formatPromptJson(entry: {
       tags: entry.tags ?? []
     },
     prompt: {
-      full: entry.prompt,
-      sections
+      full: textToLines(entry.prompt),
+      sections: sections.map(s => ({
+        title: s.title,
+        content: textToLines(s.content)
+      }))
     }
   };
 
@@ -64,7 +68,7 @@ export function formatExportJson(entries: Array<{
     _info: {
       generator: 'PromptGen v2.0',
       exportedAt: new Date().toISOString(),
-      format: 'promptgen-export-v1',
+      format: 'promptgen-export-v2',
       totalProjects: entries.length,
       totalWords: entries.reduce((s, e) => s + e.wordCount, 0)
     },
@@ -86,13 +90,25 @@ export function formatExportJson(entries: Array<{
       documentCount: e.documentCount,
       tags: e.tags,
       prompt: {
-        full: e.prompt,
-        sections: parsePromptSections(e.prompt)
+        full: textToLines(e.prompt),
+        sections: parsePromptSections(e.prompt).map(s => ({
+          title: s.title,
+          content: textToLines(s.content)
+        }))
       }
     }))
   };
 
   return JSON.stringify(structured, null, 2);
+}
+
+/**
+ * Convierte un texto multilínea en un array de líneas para que sea legible en JSON.
+ * Cada línea es un elemento del array, eliminando el problema de strings enormes con \n.
+ */
+function textToLines(text: string): string[] {
+  if (!text) return [];
+  return text.split('\n');
 }
 
 /** Divide el prompt en secciones basándose en los separadores ════ */
