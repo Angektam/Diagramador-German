@@ -90,8 +90,14 @@ import { NotificationService } from '../../services/notification.service';
                 <input type="checkbox" [(ngModel)]="rememberMe" name="remember">
                 <span>Recordarme</span>
               </label>
-              <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
             </div>
+            
+            @if (authService.isLocked()) {
+              <div class="lockout-warning">
+                <span class="lockout-icon">🔒</span>
+                <span>Cuenta bloqueada. Intenta en {{ authService.getRemainingLockTime() }}s</span>
+              </div>
+            }
             
             <button 
               type="submit" 
@@ -739,11 +745,29 @@ import { NotificationService } from '../../services/notification.service';
       position: relative;
       z-index: 1;
     }
+    
+    .lockout-warning {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      font-size: 13px;
+      color: #fca5a5;
+      font-weight: 500;
+    }
+    
+    .lockout-icon {
+      font-size: 18px;
+    }
   `]
 })
 export class LoginComponent {
   private router = inject(Router);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
   private notifications = inject(NotificationService);
 
   isLoginMode = signal(true);
@@ -819,12 +843,12 @@ export class LoginComponent {
     this.isLoading.set(true);
     // Breve delay para feedback visual del spinner
     setTimeout(() => {
-      const success = this.authService.login(this.loginData.username.trim(), this.loginData.password);
-      if (success) {
+      const result = this.authService.login(this.loginData.username.trim(), this.loginData.password);
+      if (result.success) {
         this.notifications.success(`¡Bienvenido ${this.loginData.username}!`);
         this.router.navigate(['/dashboard']);
       } else {
-        this.notifications.error('Usuario o contraseña incorrectos');
+        this.notifications.error(result.error || 'Usuario o contraseña incorrectos');
       }
       this.isLoading.set(false);
     }, 500);
@@ -873,10 +897,10 @@ export class LoginComponent {
     const password = this.registerData.password;
 
     setTimeout(() => {
-      const success = this.authService.register(username, email, password);
-      if (success) {
-        const loggedIn = this.authService.login(username, password);
-        if (loggedIn) {
+      const regResult = this.authService.register(username, email, password);
+      if (regResult.success) {
+        const loginResult = this.authService.login(username, password);
+        if (loginResult.success) {
           this.notifications.success('¡Cuenta creada y sesión iniciada! 🎉');
           this.registerData = { username: '', email: '', password: '' };
           this.router.navigate(['/dashboard']);
@@ -884,7 +908,7 @@ export class LoginComponent {
           this.notifications.warning('Cuenta creada. Inicia sesión manualmente.');
         }
       } else {
-        this.notifications.error('El usuario ya existe');
+        this.notifications.error(regResult.error || 'El usuario ya existe');
       }
       this.isLoading.set(false);
     }, 500);

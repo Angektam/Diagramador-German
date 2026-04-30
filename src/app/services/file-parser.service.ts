@@ -1,10 +1,71 @@
 import { Injectable } from '@angular/core';
 
+/** Tamaño máximo de archivo permitido (20 MB) */
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+/** Extensiones permitidas */
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'docx', 'doc', 'txt', 'md', 'rtf']);
+
+/** MIME types válidos por extensión */
+const VALID_MIME_TYPES: Record<string, string[]> = {
+  pdf:  ['application/pdf'],
+  docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  doc:  ['application/msword'],
+  txt:  ['text/plain'],
+  md:   ['text/markdown', 'text/plain', 'text/x-markdown'],
+  rtf:  ['application/rtf', 'text/rtf'],
+};
+
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FileParserService {
   private readonly MAX_PDF_PAGES = 80;
 
+  /** Verifica si DecompressionStream está disponible (Safari < 16.4, Firefox < 113 no lo soportan) */
+  get supportsDecompression(): boolean {
+    return typeof DecompressionStream !== 'undefined';
+  }
+
+  /** Valida un archivo antes de parsearlo */
+  validateFile(file: File): FileValidationResult {
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return { valid: false, error: `Formato .${ext} no soportado. Usa: ${[...ALLOWED_EXTENSIONS].join(', ')}` };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      return { valid: false, error: `Archivo demasiado grande (${sizeMB} MB). Máximo: 20 MB` };
+    }
+
+    if (file.size === 0) {
+      return { valid: false, error: 'El archivo está vacío' };
+    }
+
+    // Validar MIME type si el navegador lo reporta
+    if (file.type && VALID_MIME_TYPES[ext]) {
+      const validTypes = VALID_MIME_TYPES[ext];
+      if (!validTypes.includes(file.type) && file.type !== 'application/octet-stream') {
+        // Solo advertir, no bloquear (algunos navegadores reportan MIME incorrecto)
+        console.warn(`MIME type inesperado para .${ext}: ${file.type}`);
+      }
+    }
+
+    return { valid: true };
+  }
+
   async parseFile(file: File): Promise<string> {
+    // Validar antes de parsear
+    const validation = this.validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
     const ext = file.name.split('.').pop()?.toLowerCase();
 
     switch (ext) {
@@ -13,6 +74,7 @@ export class FileParserService {
       case 'doc':  return this.parseDoc(file);
       case 'txt':
       case 'md':
+      case 'rtf':
       default:
         return this.parseText(file);
     }
@@ -32,13 +94,22 @@ export class FileParserService {
    * Lee las entradas del ZIP manualmente y parsea el XML.
    */
   private async parseDocx(file: File): Promise<string> {
+    if (!this.supportsDecompression) {
+      console.warn('DecompressionStream no disponible — DOCX comprimidos podrían no parsearse correctamente');
+    }
     try {
       const buffer = await file.arrayBuffer();
       const xml = await this.extractZipEntry(new Uint8Array(buffer), 'word/document.xml');
-      if (!xml) throw new Error('No se encontró word/document.xml');
-      return this.extractTextFromWordXml(xml);
-    } catch (e) {
-      console.warn('parseDocx falló, intentando como texto plano:', e);
+      if (!xml) throw new Error('No se encontró word/document.xml en el archivo DOCX');
+      const text = this.extractTextFromWordXml(xml);
+      if (!text.trim()) throw new Error('El documento DOCX no contiene texto extraíble');
+      return text;
+    } catch (e: any) {
+      const msg = e?.message ?? 'Error desconocido';
+      if (msg.includes('DecompressionStream') || (!this.supportsDecompression && msg.includes('word/document.xml'))) {
+        throw new Error('Tu navegador no soporta la descompresión de archivos DOCX. Usa Chrome, Edge o Firefox 113+, o convierte el archivo a TXT/PDF.');
+      }
+      console.warn('parseDocx falló, intentando como texto plano:', msg);
       return this.parseText(file);
     }
   }

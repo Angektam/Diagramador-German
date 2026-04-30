@@ -91,21 +91,69 @@ export class PromptHistoryService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  import(raw: string): { imported: number; skipped: number } {
+  import(raw: string): { imported: number; skipped: number; error?: string } {
     try {
-      const parsed: any[] = JSON.parse(raw);
-      if (!Array.isArray(parsed)) throw new Error('Invalid format');
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return { imported: 0, skipped: 0, error: 'El archivo no contiene JSON válido' };
+      }
+
+      if (!Array.isArray(parsed)) {
+        // Intentar extraer del formato de exportación PromptGen
+        if (parsed && typeof parsed === 'object' && 'projects' in parsed && Array.isArray((parsed as any).projects)) {
+          parsed = (parsed as any).projects;
+        } else {
+          return { imported: 0, skipped: 0, error: 'Formato no reconocido. Se espera un array de proyectos.' };
+        }
+      }
+
+      const entries = parsed as any[];
+      if (entries.length === 0) {
+        return { imported: 0, skipped: 0, error: 'El archivo no contiene proyectos' };
+      }
+
+      if (entries.length > 200) {
+        return { imported: 0, skipped: 0, error: 'Demasiados proyectos (máx. 200). Divide el archivo.' };
+      }
+
       const existing = new Set(this.entries().map(e => e.id));
-      const toAdd: HistoryEntry[] = parsed
-        .filter(e => e.id && e.projectName && e.prompt && !existing.has(e.id))
-        .map(e => ({ tags: [], versions: [], ...e, generatedAt: new Date(e.generatedAt) }));
+      const toAdd: HistoryEntry[] = entries
+        .filter(e => this.isValidEntry(e) && !existing.has(e.id))
+        .map(e => ({
+          id: String(e.id),
+          projectName: String(e.projectName).slice(0, 100),
+          projectType: String(e.projectType),
+          generatedAt: new Date(e.generatedAt),
+          prompt: String(e.prompt),
+          wordCount: Number(e.wordCount) || e.prompt?.split(/\s+/).length || 0,
+          documentCount: Number(e.documentCount) || 0,
+          tags: Array.isArray(e.tags) ? e.tags.map(String).slice(0, 10) : [],
+          versions: Array.isArray(e.versions) ? e.versions.slice(0, 10) : []
+        }));
+
       const merged = [...toAdd, ...this.entries()].slice(0, MAX_ENTRIES);
       this.entries.set(merged);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      return { imported: toAdd.length, skipped: parsed.length - toAdd.length };
+      return { imported: toAdd.length, skipped: entries.length - toAdd.length };
     } catch {
-      return { imported: 0, skipped: 0 };
+      return { imported: 0, skipped: 0, error: 'Error al procesar el archivo' };
     }
+  }
+
+  /** Valida que un objeto tenga la estructura mínima de una entrada */
+  private isValidEntry(e: unknown): boolean {
+    if (!e || typeof e !== 'object') return false;
+    const entry = e as Record<string, unknown>;
+    return !!(
+      entry['id'] &&
+      entry['projectName'] &&
+      typeof entry['projectName'] === 'string' &&
+      entry['prompt'] &&
+      typeof entry['prompt'] === 'string' &&
+      entry['prompt'].length > 10
+    );
   }
 
   sorted(): HistoryEntry[] {
