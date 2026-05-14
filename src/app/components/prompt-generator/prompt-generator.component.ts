@@ -12,6 +12,7 @@ import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { TitleService } from '../../services/title.service';
 import { TemplateStoreService } from '../../services/template-store.service';
+import { PredefinedTemplatesService } from '../../services/predefined-templates.service';
 import { ShareService } from '../../services/share.service';
 import { ClipboardService } from '../../services/clipboard.service';
 import { ProjectInfo, ProjectType } from '../../models/project-info.interface';
@@ -65,6 +66,9 @@ const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
               <span class="user-role">Usuario</span>
             </div>
           </div>
+          <button class="theme-btn" (click)="theme.toggle()" [title]="'Tema: ' + theme.preference()">
+            {{ theme.theme() === 'dark' ? '☀️' : '🌙' }}
+          </button>
           <button class="logout-btn" (click)="logout()" title="Cerrar sesión">⏻</button>
         </div>
       </aside>
@@ -89,6 +93,25 @@ const PROJECT_TYPES: { value: ProjectType; label: string; icon: string }[] = [
           </div>
 
           <div class="upload-card">
+            <!-- Templates predefinidos -->
+            <div class="predefined-bar">
+              <button class="link-btn" (click)="showPredefinedTemplates.set(!showPredefinedTemplates())">
+                🚀 {{ showPredefinedTemplates() ? 'Ocultar' : 'Ver' }} templates de proyectos comunes
+              </button>
+            </div>
+            @if (showPredefinedTemplates()) {
+              <div class="predefined-grid">
+                @for (t of predefinedTemplates.templates; track t.id) {
+                  <button class="predefined-card" (click)="applyPredefinedTemplate(t.id)">
+                    <span class="predefined-icon">{{ t.icon }}</span>
+                    <span class="predefined-name">{{ t.name }}</span>
+                    <span class="predefined-desc">{{ t.description }}</span>
+                    <span class="predefined-techs">{{ t.technologies.slice(0,3).join(' · ') }}</span>
+                  </button>
+                }
+              </div>
+            }
+
             @if (inputMode() === 'file') {
               <div class="upload-area"
                    [class.drag-over]="isDragOver()"
@@ -314,6 +337,11 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
                 <button class="lang-btn" [class.active]="promptModel() === 'claude'" (click)="setPromptModel('claude')">Claude</button>
                 <button class="lang-btn" [class.active]="promptModel() === 'gemini'" (click)="setPromptModel('gemini')">Gemini</button>
               </div>
+              <!-- Token counter en tiempo real -->
+              <div class="live-token-counter token-{{ liveTokenLevel }}">
+                <span class="token-icon">⚡</span>
+                <span>~{{ liveTokenEstimate.toLocaleString('es-ES') }} tokens estimados</span>
+              </div>
             </div>
             <!-- Fila 2: Acciones -->
             <div class="action-row">
@@ -409,11 +437,20 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
           <div class="action-row">
             <button class="btn-secondary" (click)="goToDashboard()">🗂️ Ver Proyectos</button>
             <button class="btn-secondary" (click)="reset()">🔄 Nuevo</button>
-            <button class="btn-secondary" (click)="downloadPrompt()">💾 Descargar .md</button>
+            <button class="btn-secondary" (click)="downloadPrompt()">💾 .md</button>
+            <button class="btn-secondary" (click)="downloadPromptTxt()">📄 .txt limpio</button>
             <button class="btn-secondary" (click)="sharePrompt()">🔗 Compartir</button>
             <button class="btn-primary" [class.btn-copied]="copyDone()" (click)="copyPrompt()">
               {{ copyDone() ? '✓ Copiado' : '📋 Copiar Prompt' }}
             </button>
+          </div>
+
+          <!-- Copiar sección individual -->
+          <div class="section-copy-bar">
+            <span class="section-copy-label">Copiar sección:</span>
+            @for (sec of ['DOCUMENTACIÓN DEL PROYECTO', 'ANÁLISIS EXTRAÍDO', 'INSTRUCCIONES DE GENERACIÓN', 'SEGURIDAD', 'BASE DE DATOS', 'ESPECIFICACIONES TÉCNICAS']; track sec) {
+              <button class="section-copy-btn" (click)="copySectionByTitle(sec)">{{ sec }}</button>
+            }
           </div>
         }
 
@@ -454,6 +491,8 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     .user-role { font-size: 11px; color: rgba(255,255,255,.4); }
     .logout-btn { background: rgba(255,255,255,.07); border: none; color: rgba(255,255,255,.5); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all var(--t); flex-shrink: 0; }
     .logout-btn:hover { background: var(--c-red-bg); color: var(--c-red); }
+    .theme-btn { background: rgba(255,255,255,.07); border: none; color: rgba(255,255,255,.6); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all var(--t); flex-shrink: 0; }
+    .theme-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
 
     /* MAIN */
     .main { flex: 1; overflow-y: auto; background: var(--c-bg); padding: 36px 40px; }
@@ -650,6 +689,26 @@ El sistema debe permitir registrar productos, controlar stock, generar alertas c
     /* Cost row */
     .cost-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; opacity: .8; }
     .cost-row span:first-child { font-weight: 600; }
+    /* Predefined templates */
+    .predefined-bar { margin-bottom: 12px; }
+    .predefined-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .predefined-card { background: var(--c-bg); border: 1.5px solid var(--c-border); border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: all var(--t); text-align: left; }
+    .predefined-card:hover { border-color: var(--c-accent); background: var(--c-accent-bg); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(109,40,217,.12); }
+    .predefined-icon { font-size: 24px; }
+    .predefined-name { font-size: 13px; font-weight: 700; color: var(--c-text); }
+    .predefined-desc { font-size: 11px; color: var(--c-text-3); line-height: 1.4; }
+    .predefined-techs { font-size: 11px; color: var(--c-accent); font-weight: 500; margin-top: 2px; }
+    /* Live token counter */
+    .live-token-counter { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid; }
+    .live-token-counter.token-green { background: var(--c-green-bg); color: var(--c-green); border-color: #86efac; }
+    .live-token-counter.token-amber { background: var(--c-amber-bg); color: var(--c-amber); border-color: #fcd34d; }
+    .live-token-counter.token-red   { background: var(--c-red-bg);   color: var(--c-red);   border-color: #fca5a5; }
+    .token-icon { font-size: 14px; }
+    /* Section copy bar */
+    .section-copy-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; }
+    .section-copy-label { font-size: 11px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0; }
+    .section-copy-btn { padding: 4px 10px; border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 6px; font-size: 10px; font-weight: 600; color: var(--c-text-2); cursor: pointer; transition: all var(--t); white-space: nowrap; }
+    .section-copy-btn:hover { border-color: var(--c-accent); color: var(--c-accent); background: var(--c-accent-bg); }
   `]
 })
 export class PromptGeneratorComponent implements OnInit, OnDestroy {
@@ -664,6 +723,7 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   history = inject(PromptHistoryService);
   readonly templateStore = inject(TemplateStoreService);
+  readonly predefinedTemplates = inject(PredefinedTemplatesService);
   private shareService = inject(ShareService);
   private clipboard = inject(ClipboardService);
 
@@ -695,6 +755,8 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
   shortMode = signal(false);
   showTemplates = signal(false);
   showStackSuggestions = signal(false);
+  showPredefinedTemplates = signal(false);
+  showSectionCopy = signal<string | null>(null);
   extraInstructions = signal<string[]>([]);
   templateName = '';
   private textDebounce: any = null;
@@ -921,6 +983,23 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
   }
   get tokenWarning() { return this.tokenEstimate > 8000; }
 
+  /** Estimación de tokens en tiempo real durante el análisis (antes de generar) */
+  get liveTokenEstimate(): number {
+    const techCount = this.editTechs.length;
+    const reqCount = this.editReqs.filter(r => !r.excluded).length;
+    const docChars = this.parsedContents().join('').length;
+    // Estimación heurística: base + techs + reqs + docs
+    const base = this.tokenBudget();
+    const extra = techCount * 15 + reqCount * 40 + Math.round(docChars / 4);
+    return Math.min(base + extra, 32000);
+  }
+
+  get liveTokenLevel(): 'green' | 'amber' | 'red' {
+    if (this.liveTokenEstimate < 4000) return 'green';
+    if (this.liveTokenEstimate < 8000) return 'amber';
+    return 'red';
+  }
+
   get costEstimate(): { gpt4: string; claude: string; gemini: string } {
     const tokens = this.tokenEstimate;
     // Precios aproximados por 1K tokens (input+output estimado x3)
@@ -1040,6 +1119,75 @@ export class PromptGeneratorComponent implements OnInit, OnDestroy {
     });
     a.click(); URL.revokeObjectURL(a.href);
     this.notifications.success('Descargado como .md');
+  }
+
+  downloadPromptTxt() {
+    if (!this.generatedPrompt()) return;
+    // Versión limpia: eliminar separadores ════ para pegar directo en la IA
+    const clean = this.generatedPrompt()!.content
+      .replace(/════+/g, '---')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    const blob = new Blob([clean], { type: 'text/plain;charset=utf-8' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: `prompt-${(this.editName || 'proyecto').replace(/\s+/g, '-')}.txt`
+    });
+    a.click(); URL.revokeObjectURL(a.href);
+    this.notifications.success('Descargado como .txt (limpio)');
+  }
+
+  async copySectionByTitle(title: string) {
+    const content = this.generatedPrompt()?.content ?? '';
+    const lines = content.split('\n');
+    const sections: string[] = [];
+    let inSection = false;
+    let sectionTitle = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      if (/^════/.test(lines[i])) {
+        const nextLine = lines[i + 1]?.trim() ?? '';
+        const afterSep = lines[i + 2];
+        if (afterSep !== undefined && /^════/.test(afterSep)) {
+          if (inSection) break;
+          if (nextLine.toLowerCase().includes(title.toLowerCase())) {
+            inSection = true;
+            sectionTitle = nextLine;
+            i += 2; // skip title + closing sep
+            continue;
+          }
+        }
+      }
+      if (inSection) sections.push(lines[i]);
+    }
+
+    const text = sections.join('\n').trim();
+    if (text) {
+      await this.clipboard.copyText(text, `Sección "${sectionTitle}" copiada`);
+    } else {
+      this.notifications.warning('No se encontró esa sección');
+    }
+  }
+
+  applyPredefinedTemplate(id: string) {
+    const t = this.predefinedTemplates.getById(id);
+    if (!t) return;
+    this.editType = t.projectType;
+    this.editTechs = [...t.technologies];
+    // Agregar requisitos predefinidos como editables
+    const existingIds = new Set(this.editReqs.map(r => r.id));
+    const newReqs = t.requirements
+      .filter(desc => !this.editReqs.some(r => r.description === desc))
+      .map((desc, i) => ({
+        id: `PRE-${i}-${Date.now()}`,
+        description: desc,
+        type: 'functional' as const,
+        priority: 'medium' as const,
+        excluded: false
+      }));
+    this.editReqs = [...this.editReqs, ...newReqs];
+    this.showPredefinedTemplates.set(false);
+    this.notifications.success(`Template "${t.name}" aplicado`);
   }
 
   reset() {

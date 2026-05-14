@@ -11,6 +11,7 @@ import { TitleService } from '../../services/title.service';
 import { formatExportJson } from '../../utils/json-formatter';
 import { ShareService } from '../../services/share.service';
 import { ClipboardService } from '../../services/clipboard.service';
+import { StatsService } from '../../services/stats.service';
 
 type Section = 'projects' | 'new';
 
@@ -98,6 +99,7 @@ type Section = 'projects' | 'new';
                 <button class="btn-secondary-outline" (click)="exportAll()">📤 Exportar</button>
                 <button class="btn-secondary-outline" (click)="importInput.click()">📥 Importar</button>
                 <input #importInput type="file" accept=".json" style="display:none" (change)="importHistory($event)" />
+                <button class="btn-secondary-outline" (click)="showStatsPanel.set(!showStatsPanel())">📊 Stats</button>
                 <button class="btn-danger-outline" (click)="clearAll()">🗑 Limpiar todo</button>
               }
               <button class="btn-primary" (click)="goToGenerator()">✨ Nuevo Prompt</button>
@@ -120,6 +122,66 @@ type Section = 'projects' | 'new';
                   <div class="stat-pill">🏆 Más usado: {{ typeLabel(stats().topType!) }}</div>
                 }
                 <div class="stat-pill hint">Ctrl+N → nuevo prompt</div>
+              </div>
+            }
+
+            <!-- Panel de estadísticas detalladas -->
+            @if (showStatsPanel() && statsService.overview().total > 0) {
+              <div class="stats-panel">
+                <div class="stats-panel-header">
+                  <h3>📊 Estadísticas</h3>
+                  <button class="link-btn" (click)="showStatsPanel.set(false)">✕</button>
+                </div>
+                <div class="stats-overview-grid">
+                  <div class="stats-ov-card">
+                    <div class="stats-ov-value">{{ statsService.overview().total }}</div>
+                    <div class="stats-ov-label">Prompts totales</div>
+                  </div>
+                  <div class="stats-ov-card">
+                    <div class="stats-ov-value">{{ statsService.overview().totalWords.toLocaleString('es-ES') }}</div>
+                    <div class="stats-ov-label">Palabras generadas</div>
+                  </div>
+                  <div class="stats-ov-card">
+                    <div class="stats-ov-value">{{ statsService.overview().totalTokens.toLocaleString('es-ES') }}</div>
+                    <div class="stats-ov-label">Tokens estimados</div>
+                  </div>
+                  <div class="stats-ov-card">
+                    <div class="stats-ov-value">{{ statsService.overview().avgWords }}</div>
+                    <div class="stats-ov-label">Palabras promedio</div>
+                  </div>
+                </div>
+                <!-- Tipos de proyecto -->
+                <div class="stats-types">
+                  <div class="stats-section-title">Por tipo de proyecto</div>
+                  @for (t of statsService.typeStats(); track t.type) {
+                    <div class="stats-type-row">
+                      <span class="stats-type-icon">{{ t.icon }}</span>
+                      <span class="stats-type-label">{{ t.label }}</span>
+                      <div class="stats-type-bar-wrap">
+                        <div class="stats-type-bar" [style.width.%]="t.percent"></div>
+                      </div>
+                      <span class="stats-type-count">{{ t.count }} ({{ t.percent }}%)</span>
+                    </div>
+                  }
+                </div>
+                <!-- Actividad mensual -->
+                @if (statsService.monthlyActivity().length > 1) {
+                  <div class="stats-activity">
+                    <div class="stats-section-title">Actividad mensual</div>
+                    <div class="activity-chart">
+                      @for (m of statsService.monthlyActivity(); track m.month + m.year) {
+                        <div class="activity-col">
+                          <div class="activity-bar-wrap">
+                            <div class="activity-bar"
+                                 [style.height.%]="getActivityBarHeight(m.count)"
+                                 [title]="m.count + ' prompts en ' + m.month + ' ' + m.year"></div>
+                          </div>
+                          <div class="activity-label">{{ m.month }}</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
               </div>
             }
             <!-- Filtro por tipo -->
@@ -618,6 +680,28 @@ type Section = 'projects' | 'new';
     .export-meta { font-size: 11px; color: var(--c-text-3); flex-shrink: 0; }
     .modal-foot { display: flex; align-items: center; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--c-border); }
     .export-count { font-size: 13px; color: var(--c-text-3); flex: 1; }
+    /* Stats panel */
+    .stats-panel { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .stats-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .stats-panel-header h3 { font-size: 15px; font-weight: 700; color: var(--c-text); margin: 0; }
+    .stats-overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stats-ov-card { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; padding: 14px; text-align: center; }
+    .stats-ov-value { font-size: 22px; font-weight: 800; color: var(--c-accent); letter-spacing: -.03em; }
+    .stats-ov-label { font-size: 11px; color: var(--c-text-3); margin-top: 4px; font-weight: 500; }
+    .stats-section-title { font-size: 12px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+    .stats-types { margin-bottom: 20px; }
+    .stats-type-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .stats-type-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+    .stats-type-label { font-size: 12px; font-weight: 600; color: var(--c-text-2); width: 110px; flex-shrink: 0; }
+    .stats-type-bar-wrap { flex: 1; height: 8px; background: var(--c-border); border-radius: 4px; overflow: hidden; }
+    .stats-type-bar { height: 100%; background: linear-gradient(90deg, var(--c-accent), var(--c-accent-3)); border-radius: 4px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .stats-type-count { font-size: 11px; color: var(--c-text-3); width: 70px; text-align: right; flex-shrink: 0; }
+    .stats-activity { }
+    .activity-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .activity-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+    .activity-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+    .activity-bar { width: 100%; background: linear-gradient(180deg, var(--c-accent), var(--c-accent-3)); border-radius: 4px 4px 0 0; transition: height .6s cubic-bezier(.4,0,.2,1); min-height: 4px; }
+    .activity-label { font-size: 9px; color: var(--c-text-3); font-weight: 600; }
   `]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -630,6 +714,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private shareService = inject(ShareService);
   private clipboard = inject(ClipboardService);
   history = inject(PromptHistoryService);
+  readonly statsService = inject(StatsService);
 
   section = signal<Section>('projects');
   expandedId = signal<string | null>(null);
@@ -643,6 +728,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   tagInput = '';
   versionsId = signal<string | null>(null);
   showOnboarding = signal(!localStorage.getItem('pg_onboarding_done'));
+  showStatsPanel = signal(false);
   compareIds = signal<[string, string] | null>(null);
   showExportModal = signal(false);
   exportSelection = signal<Set<string>>(new Set());
@@ -708,6 +794,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     setTimeout(() => this.loading.set(false), 400);
   }
   ngOnDestroy() { this.titleSvc.reset(); }
+
+  getActivityBarHeight(count: number): number {
+    const max = Math.max(...this.statsService.monthlyActivity().map(m => m.count), 1);
+    return Math.max(8, Math.round((count / max) * 100));
+  }
 
   onSearchInput(value: string) {
     this.searchRaw = value;
